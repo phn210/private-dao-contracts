@@ -199,7 +199,7 @@ contract DKG is IDKG {
         }
     }
 
-    function startTally(
+    function startTallying(
         bytes32 _proposalID,
         uint256 _distributedKeyID,
         uint256[][] memory _R,
@@ -273,7 +273,7 @@ contract DKG is IDKG {
         }
     }
 
-    function submitTallyResult(
+    function submitTallyingResult(
         bytes32 _proposalID,
         uint256[] calldata _result,
         bytes calldata _proof
@@ -304,7 +304,10 @@ contract DKG is IDKG {
                 publicInputs
             )
         );
-        IDKGRequest(tallyTracker.dao).submitRequestResult(_proposalID, _result);
+        IDKGRequest(tallyTracker.dao).submitTallyingResult(
+            _proposalID,
+            _result
+        );
         tallyTracker.state = TallyTrackerState.END;
     }
 
@@ -326,6 +329,12 @@ contract DKG is IDKG {
         uint256 _distributedKeyID
     ) external view override returns (DistributedKeyState) {
         return distributedKeys[_distributedKeyID].state;
+    }
+
+    function getType(
+        uint256 _distributedKeyID
+    ) external view override returns (DistributedKeyType) {
+        return distributedKeys[_distributedKeyID].keyType;
     }
 
     function getRound1Contribution(
@@ -350,11 +359,11 @@ contract DKG is IDKG {
 
     function getVerifier(
         uint256 _distributedKeyID
-    ) external view override returns (address) {
+    ) external view override returns (IVerifier) {
         DistributedKey storage distributedKey = distributedKeys[
             _distributedKeyID
         ];
-        return distributedKey.verifier;
+        return IVerifier(distributedKey.verifier);
     }
 
     function getTallyResultVector(

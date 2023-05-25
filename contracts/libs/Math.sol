@@ -6,6 +6,8 @@ import "./CurveBabyJubJub.sol";
 library Math {
     uint256 constant PRIME_Q =
         21888242871839275222246405745257275088696311157297823662689037894645226208583;
+    uint256 constant MAX_INT =
+        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
 
     function computeLagrangeCoefficient(
         uint8[] memory _listIndex,

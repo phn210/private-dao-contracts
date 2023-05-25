@@ -18,35 +18,57 @@ interface IFundManager {
         mapping(address => uint256) balances;
         mapping(address => uint256) daoBalances;
         FundingRoundState state;
-        uint256 pendingStartTimestamp;
-        uint256 activeStartTimestamp;
-        uint256 tallyStartTimestamp;
-        uint256 succeededTimestamp;
-        uint256 finalizedTimestamp;
-        uint256 failedTimestamp;
+        uint256 pendingStartBN;
+        uint256 activeStartBN;
+        uint256 tallyStartBN;
+        uint256 succeededBN;
+        uint256 finalizedBN;
+        uint256 failedBN;
     }
 
     struct FundingRoundConfig {
         uint256 fundingRoundInterval;
-        uint256 fundingRoundPeriod;
-        uint256 pendingPeriod;
-        uint256 activePeriod;
-        uint256 tallyingPeriod;
+        uint256 pendingPeriodBN;
+        uint256 activePeriodBN;
+        uint256 tallyingPeriodBN;
+    }
+
+    struct MerkleTreeConfig {
+        uint32 levels;
+        address poseidon;
     }
 
     /*====================== MODIFIER ======================*/
+
+    modifier onlyFounder() virtual;
+
+    modifier onlyCommittee() virtual;
+
+    modifier onlyWhitelistedDAO() virtual;
 
     /*================== EXTERNAL FUNCTION ==================*/
 
     function applyForFunding() external;
 
-    function launchFundingRound() external;
+    function launchFundingRound(
+        uint256 _distributedKeyID
+    ) external returns (bytes32);
 
-    function startTallying() external;
+    function fund(
+        bytes32 _proposalID,
+        uint256 _commitment,
+        uint256[][] calldata _R,
+        uint256[][] calldata _M,
+        bytes calldata _proof
+    ) external payable;
 
-    function submitTallyingResult() external;
+    function startTallying(bytes32 _proposalID) external;
 
-    function finalizeFundingRound() external;
+    function finalizeFundingRound(bytes32 _proposalID) external;
+
+    function refund(bytes32 _proposalID) external;
+
+    function withdrawFund(bytes32 _proposalID, address _dao) external;
 
     /*==================== VIEW FUNCTION ====================*/
 

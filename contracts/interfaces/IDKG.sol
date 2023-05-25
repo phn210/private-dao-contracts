@@ -107,7 +107,7 @@ interface IDKG {
         bytes[] calldata _proofs
     ) external;
 
-    function startTally(
+    function startTallying(
         bytes32 _proposalID,
         uint256 _distributedKeyID,
         uint256[][] memory _R,
@@ -121,7 +121,7 @@ interface IDKG {
         bytes calldata _proof
     ) external;
 
-    function submitTallyResult(
+    function submitTallyingResult(
         bytes32 _proposalID,
         uint256[] calldata _result,
         bytes calldata _proof
@@ -141,6 +141,10 @@ interface IDKG {
         uint256 _distributedKeyID
     ) external view returns (DistributedKeyState);
 
+    function getType(
+        uint256 _distributedKeyID
+    ) external view returns (DistributedKeyType);
+
     function getRound1Contribution(
         uint256 _distributedKeyID,
         uint8 _senderIndex
@@ -152,7 +156,7 @@ interface IDKG {
 
     function getVerifier(
         uint256 _distributedKeyID
-    ) external view returns (address);
+    ) external view returns (IVerifier);
 
     function getTallyResultVector(
         bytes32 _proposalID

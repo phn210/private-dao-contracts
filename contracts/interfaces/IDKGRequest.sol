@@ -9,9 +9,13 @@ interface IDKGRequest {
         uint256[] result;
     }
 
+    /*====================== MODIFIER ======================*/
+
+    modifier onlyDKG() virtual;
+
     /*================== EXTERNAL FUNCTION ==================*/
 
-    function submitRequestResult(
+    function submitTallyingResult(
         bytes32 _proposalID,
         uint256[] calldata _result
     ) external;
@@ -21,7 +25,7 @@ interface IDKGRequest {
         address _dao,
         uint256 _distributedKeyID,
         uint256 _timestamp
-    ) external view returns (bytes32);
+    ) external pure returns (bytes32);
 
     function getRequest(
         bytes32 _proposalID
