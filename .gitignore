@@ -132,3 +132,4 @@ dist
 # Solidity Hardhat
 /artifacts
 /typechain-types
+/cache
