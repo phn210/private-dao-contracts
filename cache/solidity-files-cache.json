@@ -66,8 +66,8 @@
       "artifacts": []
     },
     "/home/ryuu/Workspace/thesis/private-dao-contracts/contracts/DKG.sol": {
-      "lastModificationDate": 1684984754659,
-      "contentHash": "d41d8cd98f00b204e9800998ecf8427e",
+      "lastModificationDate": 1685002265336,
+      "contentHash": "09c848c64ae49b5d5a26603c9a5a2223",
       "sourceName": "contracts/DKG.sol",
       "solcConfig": {
         "version": "0.8.4",
@@ -93,9 +93,20 @@
           }
         }
       },
-      "imports": [],
-      "versionPragmas": [],
-      "artifacts": []
+      "imports": [
+        "./interfaces/IDKG.sol",
+        "./interfaces/IVerifier.sol",
+        "./interfaces/IFundManager.sol",
+        "./interfaces/IDKGRequest.sol",
+        "./libs/CurveBabyJubJub.sol",
+        "./libs/Math.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "DKG"
+      ]
     },
     "/home/ryuu/Workspace/thesis/private-dao-contracts/contracts/FundManager.sol": {
       "lastModificationDate": 1684984754659,
@@ -130,8 +141,8 @@
       "artifacts": []
     },
     "/home/ryuu/Workspace/thesis/private-dao-contracts/contracts/interfaces/IDKG.sol": {
-      "lastModificationDate": 1684985784075,
-      "contentHash": "3a10a903ec6c0a38fc9f978bc128ed97",
+      "lastModificationDate": 1685001066692,
+      "contentHash": "8c4e63424552873f3f625dab0bfcb7fc",
       "sourceName": "contracts/interfaces/IDKG.sol",
       "solcConfig": {
         "version": "0.8.4",
@@ -168,8 +179,8 @@
       ]
     },
     "/home/ryuu/Workspace/thesis/private-dao-contracts/contracts/interfaces/IVerifier.sol": {
-      "lastModificationDate": 1684985540599,
-      "contentHash": "05d5b516686266f63eda2a82304606e6",
+      "lastModificationDate": 1684987687103,
+      "contentHash": "2ae5a0ff5c0bea258d907bc4a0b9deeb",
       "sourceName": "contracts/interfaces/IVerifier.sol",
       "solcConfig": {
         "version": "0.8.4",
@@ -204,8 +215,8 @@
       ]
     },
     "/home/ryuu/Workspace/thesis/private-dao-contracts/contracts/interfaces/IDKGRequest.sol": {
-      "lastModificationDate": 1684985814943,
-      "contentHash": "eb6ac462226f9df8a834567a90faad70",
+      "lastModificationDate": 1684987687115,
+      "contentHash": "38b8d142a2fc6121c2b014b8bfcaeb51",
       "sourceName": "contracts/interfaces/IDKGRequest.sol",
       "solcConfig": {
         "version": "0.8.4",
@@ -237,6 +248,152 @@
       ],
       "artifacts": [
         "IDKGRequest"
+      ]
+    },
+    "/home/ryuu/Workspace/thesis/private-dao-contracts/contracts/interfaces/IFundManager.sol": {
+      "lastModificationDate": 1684998153576,
+      "contentHash": "1c9e2c1e22332f93d6b85c1665fd5622",
+      "sourceName": "contracts/interfaces/IFundManager.sol",
+      "solcConfig": {
+        "version": "0.8.4",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "IFundManager"
+      ]
+    },
+    "/home/ryuu/Workspace/thesis/private-dao-contracts/contracts/libs/CurveBabyJubJub.sol": {
+      "lastModificationDate": 1684997391860,
+      "contentHash": "0f6163ed8a1a068ec6b083a74a255285",
+      "sourceName": "contracts/libs/CurveBabyJubJub.sol",
+      "solcConfig": {
+        "version": "0.8.4",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "CurveBabyJubJub"
+      ]
+    },
+    "/home/ryuu/Workspace/thesis/private-dao-contracts/contracts/libs/Math.sol": {
+      "lastModificationDate": 1684997458140,
+      "contentHash": "88ee841c4055042d1f8278b79cc85aea",
+      "sourceName": "contracts/libs/Math.sol",
+      "solcConfig": {
+        "version": "0.8.4",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./CurveBabyJubJub.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "Math"
+      ]
+    },
+    "/home/ryuu/Workspace/thesis/private-dao-contracts/contracts/libs/Queue.sol": {
+      "lastModificationDate": 1684997474168,
+      "contentHash": "5f06409f3aee9ca69291878230a5ca98",
+      "sourceName": "contracts/libs/Queue.sol",
+      "solcConfig": {
+        "version": "0.8.4",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "Queue"
       ]
     }
   }

@@ -13,6 +13,10 @@ import * as Contracts from ".";
 declare module "hardhat/types/runtime" {
   interface HardhatEthersHelpers extends HardhatEthersHelpersBase {
     getContractFactory(
+      name: "DKG",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.DKG__factory>;
+    getContractFactory(
       name: "IDKG",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IDKG__factory>;
@@ -21,10 +25,31 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IDKGRequest__factory>;
     getContractFactory(
+      name: "IFundManager",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IFundManager__factory>;
+    getContractFactory(
       name: "IVerifier",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IVerifier__factory>;
+    getContractFactory(
+      name: "CurveBabyJubJub",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.CurveBabyJubJub__factory>;
+    getContractFactory(
+      name: "Math",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.Math__factory>;
+    getContractFactory(
+      name: "Queue",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.Queue__factory>;
 
+    getContractAt(
+      name: "DKG",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.DKG>;
     getContractAt(
       name: "IDKG",
       address: string,
@@ -36,10 +61,30 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.IDKGRequest>;
     getContractAt(
+      name: "IFundManager",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IFundManager>;
+    getContractAt(
       name: "IVerifier",
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.IVerifier>;
+    getContractAt(
+      name: "CurveBabyJubJub",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.CurveBabyJubJub>;
+    getContractAt(
+      name: "Math",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.Math>;
+    getContractAt(
+      name: "Queue",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.Queue>;
 
     // default types
     getContractFactory(
