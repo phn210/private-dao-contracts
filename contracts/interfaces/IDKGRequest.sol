@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 interface IDKGRequest {
@@ -10,11 +10,11 @@ interface IDKGRequest {
     }
 
     /*================== EXTERNAL FUNCTION ==================*/
-    
-    function submitRequestResult(){
+
+    function submitRequestResult(
         bytes32 _proposalID,
         uint256[] calldata _result
-    } external;
+    ) external;
 
     /*==================== VIEW FUNCTION ====================*/
     function getProposalID(
