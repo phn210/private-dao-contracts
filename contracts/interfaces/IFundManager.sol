@@ -12,7 +12,7 @@ interface IFundManager {
     }
 
     struct FundingRound {
-        bytes32 proposalID;
+        bytes32 requestID;
         address[] listDAO;
         uint256[] listCommitment;
         mapping(address => uint256) balances;
@@ -55,20 +55,20 @@ interface IFundManager {
     ) external returns (bytes32);
 
     function fund(
-        bytes32 _proposalID,
+        bytes32 _requestID,
         uint256 _commitment,
         uint256[][] calldata _R,
         uint256[][] calldata _M,
         bytes calldata _proof
     ) external payable;
 
-    function startTallying(bytes32 _proposalID) external;
+    function startTallying(bytes32 _requestID) external;
 
-    function finalizeFundingRound(bytes32 _proposalID) external;
+    function finalizeFundingRound(bytes32 _requestID) external;
 
-    function refund(bytes32 _proposalID) external;
+    function refund(bytes32 _requestID) external;
 
-    function withdrawFund(bytes32 _proposalID, address _dao) external;
+    function withdrawFund(bytes32 _requestID, address _dao) external;
 
     /*==================== VIEW FUNCTION ====================*/
 

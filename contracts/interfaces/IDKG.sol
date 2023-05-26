@@ -30,6 +30,7 @@ interface IDKG {
         address votingVerifier;
         address tallyContributionVerfier;
         address tallyResultContributionVerifier;
+        address resultVerifier;
     }
 
     struct DistributedKey {
@@ -108,21 +109,21 @@ interface IDKG {
     ) external;
 
     function startTallying(
-        bytes32 _proposalID,
+        bytes32 _requestID,
         uint256 _distributedKeyID,
         uint256[][] memory _R,
         uint256[][] memory _M
     ) external;
 
     function submitTallyContribution(
-        bytes32 _proposalID,
+        bytes32 _requestID,
         uint8 _senderIndex,
         uint256[][] calldata _Di,
         bytes calldata _proof
     ) external;
 
     function submitTallyingResult(
-        bytes32 _proposalID,
+        bytes32 _requestID,
         uint256[] calldata _result,
         bytes calldata _proof
     ) external;
@@ -159,6 +160,6 @@ interface IDKG {
     ) external view returns (IVerifier);
 
     function getTallyResultVector(
-        bytes32 _proposalID
+        bytes32 _requestID
     ) external view returns (uint256[][] memory);
 }

@@ -15,7 +15,9 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
     uint8 public numberOfCommittees;
     uint8 public threshold;
     bool fundingRoundInProgress;
+    uint256 public reserveFactor;
     FundingRoundConfig public config;
+    uint256 public bounty;
 
     mapping(address => bool) public override isCommittee;
     mapping(address => bool) public override isWhitelistedDAO;
@@ -28,6 +30,7 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
 
     constructor(
         address[] memory _committeeList,
+        uint256 _reserveFactor,
         MerkleTreeConfig memory _merkleTreeConfig,
         FundingRoundConfig memory _fundingRoundConfig,
         IDKG.DKGConfig memory _dkgConfig
@@ -49,7 +52,7 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
         numberOfCommittees = (uint8)(_committeeList.length);
         threshold = numberOfCommittees / 2 + 1;
         isWhitelistedDAO[address(this)] = true;
-
+        reserveFactor = _reserveFactor;
         config = _fundingRoundConfig;
         fundingRoundQueue = new Queue(15);
         dkgContract = new DKG(_dkgConfig);
@@ -85,7 +88,7 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
 
     function launchFundingRound(
         uint256 _distributedKeyID
-    ) external override onlyWhitelistedDAO returns (bytes32 proposalID) {
+    ) external override onlyWhitelistedDAO returns (bytes32 requestID) {
         require(!fundingRoundInProgress);
         require(
             dkgContract.getState(_distributedKeyID) ==
@@ -101,12 +104,12 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
             listDAO[i] = fundingRoundQueue.dequeue();
         }
 
-        proposalID = getProposalID(
+        requestID = getRequestID(
             address(this),
             _distributedKeyID,
             block.timestamp
         );
-        Request storage request = requests[proposalID];
+        Request storage request = requests[requestID];
         request.distributedKeyID = _distributedKeyID;
         for (uint8 i; i < dimension; i++) {
             request.R[i][0] = 0;
@@ -115,7 +118,7 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
             request.M[i][1] = 1;
         }
 
-        FundingRound storage fundingRound = fundingRounds[proposalID];
+        FundingRound storage fundingRound = fundingRounds[requestID];
         fundingRound.listDAO = listDAO;
         fundingRound.state = FundingRoundState.PENDING;
         fundingRound.pendingStartBN = block.number;
@@ -124,14 +127,14 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
     }
 
     function fund(
-        bytes32 _proposalID,
+        bytes32 _requestID,
         uint256 _commitment,
         uint256[][] calldata _R,
         uint256[][] calldata _M,
         bytes calldata _proof
     ) external payable override {
-        Request storage request = requests[_proposalID];
-        FundingRound storage fundingRound = fundingRounds[_proposalID];
+        Request storage request = requests[_requestID];
+        FundingRound storage fundingRound = fundingRounds[_requestID];
         require(
             fundingRound.pendingStartBN + config.pendingPeriodBN < block.number
         );
@@ -181,12 +184,12 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
         }
 
         fundingRound.listCommitment.push(_commitment);
-        fundingRound.balances[msg.sender] = msg.value;
+        fundingRound.balances[msg.sender] += msg.value;
     }
 
-    function startTallying(bytes32 _proposalID) external override {
-        Request storage request = requests[_proposalID];
-        FundingRound storage fundingRound = fundingRounds[_proposalID];
+    function startTallying(bytes32 _requestID) external override {
+        Request storage request = requests[_requestID];
+        FundingRound storage fundingRound = fundingRounds[_requestID];
         require(
             fundingRound.state == FundingRoundState.ACTIVE &&
                 fundingRound.activeStartBN + config.activePeriodBN <
@@ -194,7 +197,7 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
         );
 
         dkgContract.startTallying(
-            _proposalID,
+            _requestID,
             request.distributedKeyID,
             request.R,
             request.M
@@ -204,11 +207,11 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
     }
 
     function submitTallyingResult(
-        bytes32 _proposalID,
+        bytes32 _requestID,
         uint256[] calldata _result
     ) external override onlyDKG {
-        Request storage request = requests[_proposalID];
-        FundingRound storage fundingRound = fundingRounds[_proposalID];
+        Request storage request = requests[_requestID];
+        FundingRound storage fundingRound = fundingRounds[_requestID];
         require(
             fundingRound.state == FundingRoundState.TALLYING &&
                 fundingRound.tallyStartBN + config.tallyingPeriodBN >=
@@ -219,9 +222,9 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
         fundingRound.state = FundingRoundState.SUCCEEDED;
     }
 
-    function finalizeFundingRound(bytes32 _proposalID) external override {
-        Request storage request = requests[_proposalID];
-        FundingRound storage fundingRound = fundingRounds[_proposalID];
+    function finalizeFundingRound(bytes32 _requestID) external override {
+        Request storage request = requests[_requestID];
+        FundingRound storage fundingRound = fundingRounds[_requestID];
         require(
             fundingRound.tallyStartBN + config.tallyingPeriodBN < block.number
         );
@@ -249,26 +252,29 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
         }
     }
 
-    function refund(bytes32 _proposalID) external override {
-        FundingRound storage fundingRound = fundingRounds[_proposalID];
+    function refund(bytes32 _requestID) external override {
+        FundingRound storage fundingRound = fundingRounds[_requestID];
         require(fundingRound.state == FundingRoundState.FAILED);
         uint256 balance = fundingRound.balances[msg.sender];
         fundingRound.balances[msg.sender] = 0;
         payable(msg.sender).transfer(balance);
     }
 
-    function withdrawFund(bytes32 _proposalID, address _dao) external override {
-        FundingRound storage fundingRound = fundingRounds[_proposalID];
+    function withdrawFund(bytes32 _requestID, address _dao) external override {
+        FundingRound storage fundingRound = fundingRounds[_requestID];
         require(fundingRound.state == FundingRoundState.FINALIZED);
         require(fundingRound.daoBalances[_dao] > 0);
-        uint256 balance = fundingRound.daoBalances[_dao];
+        uint256 reserveAmount = (fundingRound.daoBalances[_dao] *
+            reserveFactor) / 10 ** 18;
+        bounty += reserveAmount;
+        uint256 withdrawAmount = fundingRound.daoBalances[_dao] - reserveAmount;
         fundingRound.daoBalances[_dao] = 0;
-        payable(_dao).transfer(balance);
+        payable(_dao).transfer(withdrawAmount);
     }
 
     /*==================== VIEW FUNCTION ====================*/
 
-    function getProposalID(
+    function getRequestID(
         address _dao,
         uint256 _distributedKeyID,
         uint256 _timestamp
@@ -302,18 +308,18 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
     function getDKGParams() external view override returns (uint8, uint8) {}
 
     function getRequest(
-        bytes32 _proposalID
+        bytes32 _requestID
     ) external view override returns (Request memory) {}
 
     function getDistributedKeyID(
-        bytes32 _proposalID
+        bytes32 _requestID
     ) external view override returns (uint256) {}
 
     function getR(
-        bytes32 _proposalID
+        bytes32 _requestID
     ) external view override returns (uint256[][] memory) {}
 
     function getM(
-        bytes32 _proposalID
+        bytes32 _requestID
     ) external view override returns (uint256[][] memory) {}
 }

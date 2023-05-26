@@ -23,6 +23,7 @@ contract DKG is IDKG {
     mapping(uint256 => IVerifier) public votingVerifiers;
     mapping(uint256 => IVerifier) public tallyContributionVerifiers;
     mapping(uint256 => IVerifier) public tallyResultContributionVerifiers;
+    mapping(uint256 => IVerifier) public resultVerifiers;
 
     constructor(DKGConfig memory _dkgConfig) {
         owner = msg.sender;
@@ -37,6 +38,7 @@ contract DKG is IDKG {
         tallyResultContributionVerifiers[3] = IVerifier(
             _dkgConfig.tallyResultContributionVerifier
         );
+        resultVerifiers[3] = IVerifier(_dkgConfig.resultVerifier);
     }
 
     modifier onlyOwner() override {
@@ -91,7 +93,7 @@ contract DKG is IDKG {
         uint256 _distributedKeyID,
         uint256[] calldata _x,
         uint256[] calldata _y
-    ) external override returns (uint8) {
+    ) external override onlyCommittee returns (uint8) {
         DistributedKey storage distributedKey = distributedKeys[
             _distributedKeyID
         ];
@@ -135,7 +137,7 @@ contract DKG is IDKG {
         uint8[] calldata _committeeIndexes,
         uint256[][] calldata _ciphers,
         bytes[] calldata _proofs
-    ) external override {
+    ) external override onlyCommittee {
         DistributedKey storage distributedKey = distributedKeys[
             _distributedKeyID
         ];
@@ -200,12 +202,17 @@ contract DKG is IDKG {
     }
 
     function startTallying(
-        bytes32 _proposalID,
+        bytes32 _requestID,
         uint256 _distributedKeyID,
         uint256[][] memory _R,
         uint256[][] memory _M
     ) external override onlyWhitelistedDAO {
-        TallyTracker storage tallyTracker = tallyTrackers[_proposalID];
+        TallyTracker storage tallyTracker = tallyTrackers[_requestID];
+        require(
+            tallyTracker.tallyContributionVerifier == address(0) &&
+                tallyTracker.tallyResultContributionVerifier == address(0) &&
+                tallyTracker.resultVerifier == address(0)
+        );
         tallyTracker.distributedKeyID = _distributedKeyID;
         tallyTracker.R = _R;
         tallyTracker.M = _M;
@@ -216,22 +223,25 @@ contract DKG is IDKG {
         address tallyResultContributionVerifier = address(
             tallyResultContributionVerifiers[dimension]
         );
+        address resultVerifier = address(resultVerifiers[dimension]);
         require(tallyContributionVerfier != address(0));
         require(tallyResultContributionVerifier != address(0));
+        require(resultVerifier != address(0));
         tallyTracker.dao = msg.sender;
         tallyTracker.tallyContributionVerifier = tallyContributionVerfier;
         tallyTracker
             .tallyResultContributionVerifier = tallyResultContributionVerifier;
+        tallyTracker.resultVerifier = resultVerifier;
         tallyTracker.state = TallyTrackerState.TALLY_CONTRIBUTION;
     }
 
     function submitTallyContribution(
-        bytes32 _proposalID,
+        bytes32 _requestID,
         uint8 _senderIndex,
         uint256[][] calldata _Di,
         bytes calldata _proof
     ) external override onlyCommittee {
-        TallyTracker storage tallyTracker = tallyTrackers[_proposalID];
+        TallyTracker storage tallyTracker = tallyTrackers[_requestID];
         DistributedKey storage distributedKey = distributedKeys[
             tallyTracker.distributedKeyID
         ];
@@ -274,11 +284,11 @@ contract DKG is IDKG {
     }
 
     function submitTallyingResult(
-        bytes32 _proposalID,
+        bytes32 _requestID,
         uint256[] calldata _result,
         bytes calldata _proof
     ) external override {
-        TallyTracker storage tallyTracker = tallyTrackers[_proposalID];
+        TallyTracker storage tallyTracker = tallyTrackers[_requestID];
         require(
             tallyTracker.state == TallyTrackerState.TALLY_RESULT_CONTRIBUTION
         );
@@ -287,7 +297,7 @@ contract DKG is IDKG {
         ];
         uint8 dimension = distributedKey.dimension;
         // Verify result
-        uint256[][] memory resultVector = getTallyResultVector(_proposalID);
+        uint256[][] memory resultVector = getTallyResultVector(_requestID);
         uint256[] memory publicInputs = new uint256[](
             IVerifier(tallyTracker.resultVerifier).getPublicInputsLength()
         );
@@ -304,10 +314,7 @@ contract DKG is IDKG {
                 publicInputs
             )
         );
-        IDKGRequest(tallyTracker.dao).submitTallyingResult(
-            _proposalID,
-            _result
-        );
+        IDKGRequest(tallyTracker.dao).submitTallyingResult(_requestID, _result);
         tallyTracker.state = TallyTrackerState.END;
     }
 
@@ -367,9 +374,9 @@ contract DKG is IDKG {
     }
 
     function getTallyResultVector(
-        bytes32 _proposalID
+        bytes32 _requestID
     ) public view override returns (uint256[][] memory) {
-        TallyTracker memory tallyTracker = tallyTrackers[_proposalID];
+        TallyTracker memory tallyTracker = tallyTrackers[_requestID];
         DistributedKey storage distributedKey = distributedKeys[
             tallyTracker.distributedKeyID
         ];

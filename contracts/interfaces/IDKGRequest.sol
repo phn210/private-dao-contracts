@@ -16,30 +16,30 @@ interface IDKGRequest {
     /*================== EXTERNAL FUNCTION ==================*/
 
     function submitTallyingResult(
-        bytes32 _proposalID,
+        bytes32 _requestID,
         uint256[] calldata _result
     ) external;
 
     /*==================== VIEW FUNCTION ====================*/
-    function getProposalID(
+    function getRequestID(
         address _dao,
         uint256 _distributedKeyID,
         uint256 _timestamp
     ) external pure returns (bytes32);
 
     function getRequest(
-        bytes32 _proposalID
+        bytes32 _requestID
     ) external view returns (Request memory);
 
     function getDistributedKeyID(
-        bytes32 _proposalID
+        bytes32 _requestID
     ) external view returns (uint256);
 
     function getR(
-        bytes32 _proposalID
+        bytes32 _requestID
     ) external view returns (uint256[][] memory);
 
     function getM(
-        bytes32 _proposalID
+        bytes32 _requestID
     ) external view returns (uint256[][] memory);
 }
