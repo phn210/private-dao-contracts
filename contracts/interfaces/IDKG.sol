@@ -9,6 +9,13 @@ interface IDKG {
         VOTING
     }
 
+    /**
+     * ROUND_1_CONTRIBUTION => CONTRIBUTION_ROUND_1
+     * ROUND_2_CONTRIBUTION => CONTRIBUTION_ROUND_2
+     * MAIN => ACTIVE
+     * FAILED => DISABLED
+     */
+
     enum DistributedKeyState {
         ROUND_1_CONTRIBUTION,
         ROUND_2_CONTRIBUTION,
@@ -16,6 +23,12 @@ interface IDKG {
         FAILED
     }
 
+    /**
+     * TallyTrackerState => RequestState
+     * TALLY_CONTRIBUTION => CONTRIBUTION
+     * TALLY_RESULT_CONTRIBUTION => WAITING
+     * END => FINALIZED
+     */
     enum TallyTrackerState {
         TALLY_CONTRIBUTION,
         TALLY_RESULT_CONTRIBUTION,
@@ -35,6 +48,11 @@ interface IDKG {
 
     /**
      * Consider to remove
+     * state: use multiple if else => a function
+     *   round 1 contribution < n => CONTRIBUTION_ROUND_1
+     *   round 2 contribution < n => CONTRIBUTION_ROUND_2
+     *   flag disabled true => DISABLED
+     *   => ACTIVE
      * round1Counter: check contribution array
      * round2Counter: same and use 2 dimension array
      * startTimestamps: why necessary?
@@ -68,6 +86,19 @@ interface IDKG {
         uint256[] cipher;
     }
 
+    /**
+     * TallyTracker => an extended version of IDKGRequest.Request :v
+     * => IDKG.Request & IDKGRequest.RequestInfo
+     * Consider to remove/replace
+     * state: use multiple if else => a function
+     *   contribution < t => CONTRIBUTION
+     *   result.length = 0 => WAITING   
+     *   finalized flag => FINALIZED
+     * tallyCounter: check tallyContributions.length
+     * dao => requestor
+     * verifiers => only necessary if verifier contract address can be changed
+     * => can be replaced by global mapping for code simplicity & gas optimization
+     */
     struct TallyTracker {
         uint256 distributedKeyID;
         uint256[][] R;
