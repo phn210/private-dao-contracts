@@ -33,6 +33,13 @@ interface IDKG {
         address resultVerifier;
     }
 
+    /**
+     * Consider to remove
+     * round1Counter: check contribution array
+     * round2Counter: same and use 2 dimension array
+     * startTimestamps: why necessary?
+     * usageCOunter: why necessary? if it's only for one-time key => bool
+     */
     struct DistributedKey {
         DistributedKeyType keyType;
         DistributedKeyState state;

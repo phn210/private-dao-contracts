@@ -105,8 +105,8 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
         }
 
         requestID = getRequestID(
-            address(this),
             _distributedKeyID,
+            address(this),
             block.timestamp
         );
         Request storage request = requests[requestID];
@@ -274,12 +274,13 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
 
     /*==================== VIEW FUNCTION ====================*/
 
+    // FIXME use a funding round counter instead of timestamp for determinism
     function getRequestID(
-        address _dao,
         uint256 _distributedKeyID,
-        uint256 _timestamp
+        address _requestor,
+        uint256 _nonce
     ) public pure override returns (bytes32) {
-        return keccak256(abi.encodePacked(_dao, _distributedKeyID, _timestamp));
+        return keccak256(abi.encodePacked(_distributedKeyID, _requestor, _nonce));
     }
 
     /*================== INTERNAL FUNCTION ==================*/

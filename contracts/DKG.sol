@@ -15,7 +15,7 @@ contract DKG is IDKG {
     uint256 distributedKeyCounter;
 
     mapping(uint256 => DistributedKey) public distributedKeys;
-    mapping(bytes32 => TallyTracker) public tallyTrackers;
+    mapping(bytes32 => TallyTracker) public tallyTrackers;      // rename
 
     IVerifier public round2Verifier;
     // dimension => Verifier
@@ -106,6 +106,7 @@ contract DKG is IDKG {
         // ) {
         //     distributedKey.distributedKeyState = DistributedKeyState.FAILED;
         // }
+        // FIXME put _x & _y in a struct => save gas fee to check length(x) == length(y)
         require(_x.length == _y.length && _x.length == t);
 
         for (uint i; i < t; i++) {
@@ -197,7 +198,7 @@ contract DKG is IDKG {
 
         distributedKey.round2Counter += 1;
         if (distributedKey.round2Counter == n) {
-            distributedKey.state == DistributedKeyState.MAIN;
+            distributedKey.state == DistributedKeyState.MAIN;   // FIXME
         }
     }
 

@@ -21,10 +21,11 @@ interface IDKGRequest {
     ) external;
 
     /*==================== VIEW FUNCTION ====================*/
+    
     function getRequestID(
-        address _dao,
         uint256 _distributedKeyID,
-        uint256 _timestamp
+        address _requestor,
+        uint256 _nonce
     ) external pure returns (bytes32);
 
     function getRequest(
