@@ -7,6 +7,7 @@ interface IDKGRequest {
         uint256[][] R;
         uint256[][] M;
         uint256[] result;
+        uint256 resultSubmission;
     }
 
     /*====================== MODIFIER ======================*/

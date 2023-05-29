@@ -108,7 +108,8 @@ contract DAO is IDAO, IDKGRequest {
         bytes32 descriptionHash
     ) external override returns (uint256) {
         require(
-            dkg.getState(distributedKeyId) == IDKG.DistributedKeyState.ACTIVE &&
+            dkg.getDistributedKeyState(distributedKeyId) ==
+                IDKG.DistributedKeyState.ACTIVE &&
                 dkg.getType(distributedKeyId) == IDKG.DistributedKeyType.VOTING
         );
 

@@ -30,18 +30,16 @@ interface IDKG {
      * END => FINALIZED
      */
     enum TallyTrackerState {
-        TALLY_CONTRIBUTION,
-        TALLY_RESULT_CONTRIBUTION,
-        END
+        CONTRIBUTION,
+        RESULT_AWAITING,
+        RESULT_SUBMITTED
     }
 
     struct DKGConfig {
-        uint256 round1Period;
-        uint256 round2Period;
         address round2Verfier;
         address fundingVerifier;
         address votingVerifier;
-        address tallyContributionVerfier;
+        address tallyContributionVerifier;
         address resultVerifier;
     }
 
@@ -59,7 +57,6 @@ interface IDKG {
      */
     struct DistributedKey {
         DistributedKeyType keyType;
-        DistributedKeyState state;
         uint8 dimension;
         uint8 round1Counter;
         uint8 round2Counter;
@@ -115,8 +112,9 @@ interface IDKG {
         TallyTrackerState state;
         TallyDataSubmission[] tallyDataSubmissions;
         uint8 tallyCounter;
+        bool resultSubmitted;
         address dao;
-        address tallyContributionVerifier;
+        address contributionVerifier;
         address resultVerifier;
         uint256[] tallyResult;
     }
@@ -186,7 +184,7 @@ interface IDKG {
         uint256 _distributedKeyID
     ) external view returns (uint8);
 
-    function getState(
+    function getDistributedKeyState(
         uint256 _distributedKeyID
     ) external view returns (DistributedKeyState);
 

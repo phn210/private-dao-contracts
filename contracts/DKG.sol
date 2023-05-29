@@ -10,8 +10,6 @@ import "./libs/Math.sol";
 
 contract DKG is IDKG {
     address public owner;
-    uint256 round1Period;
-    uint256 round2Period;
     uint256 distributedKeyCounter;
 
     mapping(uint256 => DistributedKey) public distributedKeys;
@@ -28,13 +26,11 @@ contract DKG is IDKG {
 
     constructor(DKGConfig memory _dkgConfig) {
         owner = msg.sender;
-        round1Period = _dkgConfig.round1Period;
-        round2Period = _dkgConfig.round2Period;
         round2Verifier = IVerifier(_dkgConfig.round2Verfier);
         fundingVerifiers[3] = IVerifier(_dkgConfig.fundingVerifier);
         votingVerifiers[3] = IVerifier(_dkgConfig.votingVerifier);
         tallyContributionVerifiers[3] = IVerifier(
-            _dkgConfig.tallyContributionVerfier
+            _dkgConfig.tallyContributionVerifier
         );
         resultVerifiers[3] = IVerifier(_dkgConfig.resultVerifier);
     }
@@ -82,7 +78,6 @@ contract DKG is IDKG {
             verifier = address(votingVerifiers[_dimension]);
         }
         distributedKey.keyType = _distributedKeyType;
-        distributedKey.state = DistributedKeyState.CONTRIBUTION_ROUND_1;
         distributedKey.dimension = _dimension;
         distributedKey.verifier = verifier;
         distributedKey.publicKeyX = 0;
@@ -98,15 +93,11 @@ contract DKG is IDKG {
         DistributedKey storage distributedKey = distributedKeys[
             _distributedKeyID
         ];
-        (uint8 t, uint8 n) = IFundManager(owner).getDKGParams();
+        (uint8 t, ) = IFundManager(owner).getDKGParams();
         require(
-            distributedKey.state == DistributedKeyState.CONTRIBUTION_ROUND_1
+            getDistributedKeyState(_distributedKeyID) ==
+                DistributedKeyState.CONTRIBUTION_ROUND_1
         );
-        // if (
-        //     distributedKey.startRound1Timestamp + round1Time > block.timestamp
-        // ) {
-        //     distributedKey.distributedKeyState = DistributedKeyState.DISABLED;
-        // }
         require(
             _round1Contribution.x.length == _round1Contribution.y.length &&
                 _round1Contribution.x.length == t
@@ -136,11 +127,8 @@ contract DKG is IDKG {
                 _round1Contribution.x[0],
                 _round1Contribution.y[0]
             );
-        distributedKey.round1Counter += 1;
-        if (distributedKey.round1Counter == n) {
-            distributedKey.state = DistributedKeyState.CONTRIBUTION_ROUND_2;
-        }
 
+        distributedKey.round1Counter += 1;
         return distributedKey.round1Counter;
     }
 
@@ -153,7 +141,8 @@ contract DKG is IDKG {
         ];
         (uint8 t, uint8 n) = IFundManager(owner).getDKGParams();
         require(
-            distributedKey.state == DistributedKeyState.CONTRIBUTION_ROUND_2
+            getDistributedKeyState(_distributedKeyID) ==
+                DistributedKeyState.CONTRIBUTION_ROUND_2
         );
         require(_round2Contribution.recipientIndexes.length == n - 1);
         require(_round2Contribution.ciphers.length == n);
@@ -179,11 +168,6 @@ contract DKG is IDKG {
         }
         require(bitChecker == bitMask);
 
-        // if (
-        //     distributedKey.startRound2Timestamp + round2Time > block.timestamp
-        // ) {
-        //     distributedKey.distributedKeyState = DistributedKeyState.DISABLED;
-        // }
         uint256[] memory publicInputs = new uint256[](
             IVerifier(distributedKey.verifier).getPublicInputsLength()
         );
@@ -228,9 +212,6 @@ contract DKG is IDKG {
         }
 
         distributedKey.round2Counter += 1;
-        if (distributedKey.round2Counter == n) {
-            distributedKey.state == DistributedKeyState.ACTIVE;
-        }
     }
 
     function startTallying(
@@ -241,7 +222,7 @@ contract DKG is IDKG {
     ) external override onlyWhitelistedDAO {
         TallyTracker storage tallyTracker = tallyTrackers[_requestID];
         require(
-            tallyTracker.tallyContributionVerifier == address(0) &&
+            tallyTracker.contributionVerifier == address(0) &&
                 tallyTracker.resultVerifier == address(0)
         );
         tallyTracker.distributedKeyID = _distributedKeyID;
@@ -255,9 +236,8 @@ contract DKG is IDKG {
         require(tallyContributionVerifier != address(0));
         require(resultVerifier != address(0));
         tallyTracker.dao = msg.sender;
-        tallyTracker.tallyContributionVerifier = tallyContributionVerifier;
+        tallyTracker.contributionVerifier = tallyContributionVerifier;
         tallyTracker.resultVerifier = resultVerifier;
-        tallyTracker.state = TallyTrackerState.TALLY_CONTRIBUTION;
     }
 
     function submitTallyContribution(
@@ -268,10 +248,12 @@ contract DKG is IDKG {
         DistributedKey storage distributedKey = distributedKeys[
             tallyTracker.distributedKeyID
         ];
-        (uint8 t, uint8 n) = IFundManager(owner).getDKGParams();
+        (, uint8 n) = IFundManager(owner).getDKGParams();
         uint8 dimension = distributedKey.dimension;
 
-        require(tallyTracker.state == TallyTrackerState.TALLY_CONTRIBUTION);
+        require(
+            getTallyTrackerState(_requestID) == TallyTrackerState.CONTRIBUTION
+        );
         require(
             _tallyContribution.senderIndex >= 1 &&
                 _tallyContribution.senderIndex <= n
@@ -280,7 +262,7 @@ contract DKG is IDKG {
 
         Round2DataSubmission[] storage round2DataSubmissions = distributedKey
             .round2DataSubmissions[_tallyContribution.senderIndex];
-        IVerifier verifier = IVerifier(tallyTracker.tallyContributionVerifier);
+        IVerifier verifier = IVerifier(tallyTracker.contributionVerifier);
         uint[] memory publicInputs = new uint[](
             verifier.getPublicInputsLength()
         );
@@ -311,9 +293,6 @@ contract DKG is IDKG {
             )
         );
         tallyTracker.tallyCounter += 1;
-        if (tallyTracker.tallyCounter == t) {
-            tallyTracker.state = TallyTrackerState.TALLY_RESULT_CONTRIBUTION;
-        }
     }
 
     function submitTallyResult(
@@ -323,7 +302,8 @@ contract DKG is IDKG {
     ) external override {
         TallyTracker storage tallyTracker = tallyTrackers[_requestID];
         require(
-            tallyTracker.state == TallyTrackerState.TALLY_RESULT_CONTRIBUTION
+            getTallyTrackerState(_requestID) ==
+                TallyTrackerState.RESULT_AWAITING
         );
         DistributedKey storage distributedKey = distributedKeys[
             tallyTracker.distributedKeyID
@@ -347,8 +327,10 @@ contract DKG is IDKG {
                 publicInputs
             )
         );
+
         IDKGRequest(tallyTracker.dao).submitTallyResult(_requestID, _result);
-        tallyTracker.state = TallyTrackerState.END;
+        distributedKey.usageCounter += 1;
+        tallyTracker.resultSubmitted = true;
     }
 
     /*==================== VIEW FUNCTION ====================*/
@@ -365,10 +347,20 @@ contract DKG is IDKG {
         return distributedKeys[_distributedKeyID].dimension;
     }
 
-    function getState(
+    function getDistributedKeyState(
         uint256 _distributedKeyID
-    ) external view override returns (DistributedKeyState) {
-        return distributedKeys[_distributedKeyID].state;
+    ) public view override returns (DistributedKeyState) {
+        DistributedKey storage distributedKey = distributedKeys[
+            _distributedKeyID
+        ];
+        (, uint8 n) = IFundManager(owner).getDKGParams();
+        if (distributedKey.round2Counter == n) {
+            return DistributedKeyState.ACTIVE;
+        }
+        if (distributedKey.round1Counter == n) {
+            return DistributedKeyState.CONTRIBUTION_ROUND_2;
+        }
+        return DistributedKeyState.CONTRIBUTION_ROUND_1;
     }
 
     function getType(
@@ -393,7 +385,10 @@ contract DKG is IDKG {
         DistributedKey storage distributedKey = distributedKeys[
             _distributedKeyID
         ];
-        require(distributedKey.state == DistributedKeyState.ACTIVE);
+        require(
+            getDistributedKeyState(_distributedKeyID) ==
+                DistributedKeyState.ACTIVE
+        );
         return (distributedKey.publicKeyX, distributedKey.publicKeyY);
     }
 
@@ -406,6 +401,21 @@ contract DKG is IDKG {
         return IVerifier(distributedKey.verifier);
     }
 
+    function getTallyTrackerState(
+        bytes32 _requestID
+    ) public view returns (TallyTrackerState) {
+        TallyTracker memory tallyTracker = tallyTrackers[_requestID];
+        (uint8 t, ) = IFundManager(owner).getDKGParams();
+
+        if (tallyTracker.resultSubmitted) {
+            return TallyTrackerState.RESULT_SUBMITTED;
+        }
+        if (tallyTracker.tallyCounter == t) {
+            return TallyTrackerState.RESULT_AWAITING;
+        }
+        return TallyTrackerState.CONTRIBUTION;
+    }
+
     function getTallyResultVector(
         bytes32 _requestID
     ) public view override returns (uint256[][] memory) {
@@ -414,7 +424,8 @@ contract DKG is IDKG {
             tallyTracker.distributedKeyID
         ];
         require(
-            tallyTracker.state == TallyTrackerState.TALLY_RESULT_CONTRIBUTION
+            getTallyTrackerState(_requestID) ==
+                TallyTrackerState.RESULT_AWAITING
         );
         uint8 dimension = distributedKey.dimension;
         (uint8 t, ) = IFundManager(owner).getDKGParams();
