@@ -15,13 +15,13 @@ interface IDKGRequest {
 
     /*================== EXTERNAL FUNCTION ==================*/
 
-    function submitTallyingResult(
+    function submitTallyResult(
         bytes32 _requestID,
         uint256[] calldata _result
     ) external;
 
     /*==================== VIEW FUNCTION ====================*/
-    
+
     function getRequestID(
         uint256 _distributedKeyID,
         address _requestor,

@@ -92,7 +92,7 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
         require(!fundingRoundInProgress);
         require(
             dkgContract.getState(_distributedKeyID) ==
-                IDKG.DistributedKeyState.MAIN &&
+                IDKG.DistributedKeyState.ACTIVE &&
                 dkgContract.getType(_distributedKeyID) ==
                 IDKG.DistributedKeyType.FUNDING &&
                 dkgContract.getUsageCounter(_distributedKeyID) == 0
@@ -206,7 +206,7 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
         fundingRound.state = FundingRoundState.TALLYING;
     }
 
-    function submitTallyingResult(
+    function submitTallyResult(
         bytes32 _requestID,
         uint256[] calldata _result
     ) external override onlyDKG {
@@ -230,7 +230,7 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
         );
         if (fundingRound.state == FundingRoundState.TALLYING) {
             delete fundingRound.listCommitment;
-            fundingRound.state = FundingRoundState.FAILED;
+            fundingRound.state = FundingRoundState.DISABLED;
             fundingRound.failedBN = block.number;
 
             fundingRoundInProgress = false;
@@ -254,7 +254,7 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
 
     function refund(bytes32 _requestID) external override {
         FundingRound storage fundingRound = fundingRounds[_requestID];
-        require(fundingRound.state == FundingRoundState.FAILED);
+        require(fundingRound.state == FundingRoundState.DISABLED);
         uint256 balance = fundingRound.balances[msg.sender];
         fundingRound.balances[msg.sender] = 0;
         payable(msg.sender).transfer(balance);
@@ -280,7 +280,12 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
         address _requestor,
         uint256 _nonce
     ) public pure override returns (bytes32) {
-        return keccak256(abi.encodePacked(_distributedKeyID, _requestor, _nonce));
+        return
+            keccak256(abi.encodePacked(_distributedKeyID, _requestor, _nonce));
+    }
+
+    function isFounder(address _sender) external view override returns (bool) {
+        return _sender == founder;
     }
 
     /*================== INTERNAL FUNCTION ==================*/

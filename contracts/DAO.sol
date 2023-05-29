@@ -1,22 +1,22 @@
 pragma solidity ^0.8.0;
 
-import './interfaces/IDAO.sol';
-import './interfaces/IDKG.sol';
-import './interfaces/IDKGRequest.sol';
-import './interfaces/IFundManager.sol';
-import './interfaces/ITimelock.sol';
+import "./interfaces/IDAO.sol";
+import "./interfaces/IDKG.sol";
+import "./interfaces/IDKGRequest.sol";
+import "./interfaces/IFundManager.sol";
+import "./interfaces/ITimelock.sol";
 
 contract DAO is IDAO, IDKGRequest {
     // Used to read proposals data
     uint256 internal constant PROPOSAL_STORAGE_SIZE = 6;
 
-    // Number 
+    // Number
     uint256 internal constant VOTE_OPTIONS = 3;
 
     // Configuration for governor processes.
     Config public config;
 
-    // 
+    //
     IFundManager public fundManager;
 
     // The address of the DKG contract.
@@ -52,7 +52,7 @@ contract DAO is IDAO, IDKGRequest {
     modifier onlyDAO() {
         require(
             msg.sender == address(this),
-            'DAO::onlyDAO: call must come from the DAO contract itself'
+            "DAO::onlyDAO: call must come from the DAO contract itself"
         );
         _;
     }
@@ -60,7 +60,7 @@ contract DAO is IDAO, IDKGRequest {
     modifier onlyFundManager() {
         require(
             msg.sender == address(fundManager),
-            'DAO::onlyFundManager: call must come from the FundManager contract'
+            "DAO::onlyFundManager: call must come from the FundManager contract"
         );
         _;
     }
@@ -68,7 +68,7 @@ contract DAO is IDAO, IDKGRequest {
     modifier onlyDKG() override {
         require(
             msg.sender == address(dkg),
-            'DAO::onlyDKG: call must come from the DKG contract'
+            "DAO::onlyDKG: call must come from the DKG contract"
         );
         _;
     }
@@ -103,15 +103,21 @@ contract DAO is IDAO, IDKGRequest {
      * @param descriptionHash IPFS hash of proposal's description
      * @return Proposal's index
      */
-    function propose(Action[] calldata actions, bytes32 descriptionHash) external override returns (uint256) {
+    function propose(
+        Action[] calldata actions,
+        bytes32 descriptionHash
+    ) external override returns (uint256) {
         require(
-            dkg.getState(distributedKeyId) == IDKG.DistributedKeyState.MAIN &&
-            dkg.getType(distributedKeyId) == IDKG.DistributedKeyType.VOTING
+            dkg.getState(distributedKeyId) == IDKG.DistributedKeyState.ACTIVE &&
+                dkg.getType(distributedKeyId) == IDKG.DistributedKeyType.VOTING
         );
-        
+
         uint8 dimension = dkg.getDimension(distributedKeyId);
-        require(dimension == VOTE_OPTIONS, "DAO::propose: can not use distributed key with the wrong dimension");
-        
+        require(
+            dimension == VOTE_OPTIONS,
+            "DAO::propose: can not use distributed key with the wrong dimension"
+        );
+
         uint256 proposalId = hashProposal(actions, descriptionHash);
         Proposal storage newProposal = proposals[proposalId];
         require(
@@ -120,12 +126,14 @@ contract DAO is IDAO, IDKGRequest {
         );
 
         uint64 startBlock = uint64(block.number + config.pendingPeriod);
-        
+
         newProposal.id = hashProposal(actions, descriptionHash);
         newProposal.startBlock = startBlock;
 
         bytes32 requestId = getRequestID(
-            distributedKeyId, address(this), proposalId
+            distributedKeyId,
+            address(this),
+            proposalId
         );
 
         Request storage request = requests[requestId];
@@ -156,46 +164,45 @@ contract DAO is IDAO, IDKGRequest {
         uint256[][] calldata _R,
         uint256[][] calldata _M,
         bytes calldata _proof
-    ) external override {
-
-    }
+    ) external override {}
 
     /**
      * Tally the result of a proposal.
      * @param proposalId The id of the proposal to tally
      */
-    function tally(uint256 proposalId) external override {
-
-    }
+    function tally(uint256 proposalId) external override {}
 
     /**
      * Queue a succeeded proposal. This requires the quorum to be reached, the vote to be successful, and the voting period has ended.
      * @param actions Proposal's actions
      * @param descriptionHash IPFS hash of proposal's description
      */
-    function queue(Action[] calldata actions, bytes32 descriptionHash) external override {
-
-    }
+    function queue(
+        Action[] calldata actions,
+        bytes32 descriptionHash
+    ) external override {}
 
     /**
      * Execute a succeeded proposal. This requires the quorum to be reached, the vote to be successful, and the timelock delay period has passed.
      * @param actions Proposal's actions
      * @param descriptionHash IPFS hash of proposal's description
      */
-    function execute(Action[] calldata actions, bytes32 descriptionHash) external override {
-
-    }
+    function execute(
+        Action[] calldata actions,
+        bytes32 descriptionHash
+    ) external override {}
 
     /**
      * Cancel a queued proposal. This requires the proposer has not been executed yet.
      * @param actions Proposal's actions
      * @param descriptionHash IPFS hash of proposal's description
      */
-    function cancel(Action[] calldata actions, bytes32 descriptionHash) external override {
+    function cancel(
+        Action[] calldata actions,
+        bytes32 descriptionHash
+    ) external override {}
 
-    }
-
-    function submitTallyingResult(
+    function submitTallyResult(
         bytes32 _requestID,
         uint256[] calldata _result
     ) external override {}
@@ -204,9 +211,8 @@ contract DAO is IDAO, IDKGRequest {
      * Finalize the result of a proposal.
      * @param proposalId The id of the proposal to finalize
      */
-    function finalize(uint256 proposalId) external override {
+    function finalize(uint256 proposalId) external override {}
 
-    }
     /**
      * ==========================
      * ===== VIEW FUNCTIONs =====
@@ -218,7 +224,10 @@ contract DAO is IDAO, IDKGRequest {
      * @param actions Proposal's actions
      * @param descriptionHash IPFS hash of proposal's description
      */
-    function hashProposal(Action[] calldata actions, bytes32 descriptionHash) public pure returns (uint256) {
+    function hashProposal(
+        Action[] calldata actions,
+        bytes32 descriptionHash
+    ) public pure returns (uint256) {
         return uint256(keccak256(abi.encode(actions, descriptionHash)));
     }
 
@@ -230,19 +239,26 @@ contract DAO is IDAO, IDKGRequest {
     function state(uint256 proposalId) public view returns (ProposalState) {
         Proposal memory proposal = proposals[proposalId];
         Config memory daoConfig = config;
-        require(
-            proposal.startBlock > 0,
-            "DAO::state: proposal not existed."
-        );
+        require(proposal.startBlock > 0, "DAO::state: proposal not existed.");
         if (proposal.canceled) {
             return ProposalState.Canceled;
         } else if (block.number <= proposal.startBlock) {
             return ProposalState.Pending;
-        } else if (block.number <= (proposal.startBlock + daoConfig.votingPeriod)) {
+        } else if (
+            block.number <= (proposal.startBlock + daoConfig.votingPeriod)
+        ) {
             return ProposalState.Active;
-        } else if (block.number <= (proposal.startBlock + daoConfig.votingPeriod + daoConfig.tallyingPeriod)) {
+        } else if (
+            block.number <=
+            (proposal.startBlock +
+                daoConfig.votingPeriod +
+                daoConfig.tallyingPeriod)
+        ) {
             return ProposalState.Tallying;
-        } else if (proposal.forVotes + proposal.againstVotes + proposal.abstainVotes == 0) {
+        } else if (
+            proposal.forVotes + proposal.againstVotes + proposal.abstainVotes ==
+            0
+        ) {
             return ProposalState.Expired;
         } else if (proposal.forVotes <= proposal.againstVotes) {
             return ProposalState.Defeated;
@@ -250,7 +266,9 @@ contract DAO is IDAO, IDKGRequest {
             return ProposalState.Succeeded;
         } else if (proposal.executed) {
             return ProposalState.Executed;
-        } else if (block.timestamp >= (proposal.eta + daoConfig.queuingPeriod)) {
+        } else if (
+            block.timestamp >= (proposal.eta + daoConfig.queuingPeriod)
+        ) {
             return ProposalState.Expired;
         } else {
             return ProposalState.Queued;
@@ -268,7 +286,8 @@ contract DAO is IDAO, IDKGRequest {
         address _requestor,
         uint256 _nonce
     ) public pure override returns (bytes32) {
-        return keccak256(abi.encodePacked(_distributedKeyId, _requestor, _nonce));
+        return
+            keccak256(abi.encodePacked(_distributedKeyId, _requestor, _nonce));
     }
 
     function getRequest(

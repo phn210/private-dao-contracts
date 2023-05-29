@@ -10,17 +10,17 @@ interface IDKG {
     }
 
     /**
-     * ROUND_1_CONTRIBUTION => CONTRIBUTION_ROUND_1
-     * ROUND_2_CONTRIBUTION => CONTRIBUTION_ROUND_2
-     * MAIN => ACTIVE
-     * FAILED => DISABLED
+     * CONTRIBUTION_ROUND_1 => CONTRIBUTION_ROUND_1
+     * CONTRIBUTION_ROUND_2 => CONTRIBUTION_ROUND_2
+     * ACTIVE => ACTIVE
+     * DISABLED => DISABLED
      */
 
     enum DistributedKeyState {
-        ROUND_1_CONTRIBUTION,
-        ROUND_2_CONTRIBUTION,
-        MAIN,
-        FAILED
+        CONTRIBUTION_ROUND_1,
+        CONTRIBUTION_ROUND_2,
+        ACTIVE,
+        DISABLED
     }
 
     /**
@@ -42,7 +42,6 @@ interface IDKG {
         address fundingVerifier;
         address votingVerifier;
         address tallyContributionVerfier;
-        address tallyResultContributionVerifier;
         address resultVerifier;
     }
 
@@ -67,23 +66,33 @@ interface IDKG {
         address verifier;
         uint256 publicKeyX;
         uint256 publicKeyY;
-        Round1Contribution[] round1Contributions;
-        mapping(uint8 => Round2Contribution[]) round2Contributions;
-        uint256 startRound1Timestamp;
-        uint256 startRound2Timestamp;
+        Round1DataSubmission[] round1DataSubmissions;
+        mapping(uint8 => Round2DataSubmission[]) round2DataSubmissions;
         uint256 usageCounter;
     }
 
-    struct Round1Contribution {
+    struct Round1DataSubmission {
         address sender;
         uint8 senderIndex;
         uint256[] x;
         uint256[] y;
     }
 
-    struct Round2Contribution {
+    struct Round1Contribution {
+        uint256[] x;
+        uint256[] y;
+    }
+
+    struct Round2DataSubmission {
         uint8 senderIndex;
         uint256[] cipher;
+    }
+
+    struct Round2Contribution {
+        uint8 senderIndex;
+        uint8[] recipientIndexes;
+        uint256[][] ciphers;
+        bytes[] proofs;
     }
 
     /**
@@ -92,7 +101,7 @@ interface IDKG {
      * Consider to remove/replace
      * state: use multiple if else => a function
      *   contribution < t => CONTRIBUTION
-     *   result.length = 0 => WAITING   
+     *   result.length = 0 => WAITING
      *   finalized flag => FINALIZED
      * tallyCounter: check tallyContributions.length
      * dao => requestor
@@ -104,21 +113,27 @@ interface IDKG {
         uint256[][] R;
         uint256[][] M;
         TallyTrackerState state;
-        TallyContribution[] tallyContributions;
+        TallyDataSubmission[] tallyDataSubmissions;
+        uint8 tallyCounter;
         address dao;
         address tallyContributionVerifier;
-        address tallyResultContributionVerifier;
         address resultVerifier;
-        uint8 tallyCounter;
         uint256[] tallyResult;
     }
 
-    struct TallyContribution {
-        uint8 i;
+    struct TallyDataSubmission {
+        uint8 senderIndex;
         uint256[][] Di;
+    }
+    struct TallyContribution {
+        uint8 senderIndex;
+        uint256[][] Di;
+        bytes proof;
     }
 
     /*====================== MODIFIER ======================*/
+
+    modifier onlyFounder() virtual;
 
     modifier onlyOwner() virtual;
 
@@ -135,15 +150,12 @@ interface IDKG {
 
     function submitRound1Contribution(
         uint256 _distributedKeyID,
-        uint256[] calldata _x,
-        uint256[] calldata _y
+        Round1Contribution calldata _round1Contribution
     ) external returns (uint8);
 
     function submitRound2Contribution(
         uint256 _distributedKeyID,
-        uint8[] calldata _committeeIndexes,
-        uint256[][] calldata _ciphers,
-        bytes[] calldata _proofs
+        Round2Contribution calldata _round2Contribution
     ) external;
 
     function startTallying(
@@ -155,12 +167,10 @@ interface IDKG {
 
     function submitTallyContribution(
         bytes32 _requestID,
-        uint8 _senderIndex,
-        uint256[][] calldata _Di,
-        bytes calldata _proof
+        TallyContribution calldata _tallyContribution
     ) external;
 
-    function submitTallyingResult(
+    function submitTallyResult(
         bytes32 _requestID,
         uint256[] calldata _result,
         bytes calldata _proof
@@ -184,10 +194,10 @@ interface IDKG {
         uint256 _distributedKeyID
     ) external view returns (DistributedKeyType);
 
-    function getRound1Contribution(
+    function getRound1DataSubmission(
         uint256 _distributedKeyID,
         uint8 _senderIndex
-    ) external view returns (Round1Contribution memory);
+    ) external view returns (Round1DataSubmission memory);
 
     function getPublicKey(
         uint256 _distributedKeyID

@@ -15,15 +15,16 @@ contract DKG is IDKG {
     uint256 distributedKeyCounter;
 
     mapping(uint256 => DistributedKey) public distributedKeys;
-    mapping(bytes32 => TallyTracker) public tallyTrackers;      // rename
+    mapping(bytes32 => TallyTracker) public tallyTrackers; // rename
 
     IVerifier public round2Verifier;
     // dimension => Verifier
     mapping(uint256 => IVerifier) public fundingVerifiers;
     mapping(uint256 => IVerifier) public votingVerifiers;
     mapping(uint256 => IVerifier) public tallyContributionVerifiers;
-    mapping(uint256 => IVerifier) public tallyResultContributionVerifiers;
     mapping(uint256 => IVerifier) public resultVerifiers;
+
+    mapping(bytes32 => mapping(uint256 => IVerifier)) verifiers;
 
     constructor(DKGConfig memory _dkgConfig) {
         owner = msg.sender;
@@ -35,14 +36,16 @@ contract DKG is IDKG {
         tallyContributionVerifiers[3] = IVerifier(
             _dkgConfig.tallyContributionVerfier
         );
-        tallyResultContributionVerifiers[3] = IVerifier(
-            _dkgConfig.tallyResultContributionVerifier
-        );
         resultVerifiers[3] = IVerifier(_dkgConfig.resultVerifier);
     }
 
+    modifier onlyFounder() override {
+        require(IFundManager(owner).isFounder(msg.sender));
+        _;
+    }
+
     modifier onlyOwner() override {
-        require(msg.sender == owner, "DKG Contract: msg.sender is not owner");
+        require(msg.sender == owner);
         _;
     }
 
@@ -59,7 +62,7 @@ contract DKG is IDKG {
     function generateDistributedKey(
         uint8 _dimension,
         DistributedKeyType _distributedKeyType
-    ) external override onlyOwner returns (uint256 distributedKeyID) {
+    ) external override onlyFounder returns (uint256 distributedKeyID) {
         distributedKeyID = distributedKeyCounter;
         DistributedKey storage distributedKey = distributedKeys[
             distributedKeyID
@@ -79,55 +82,63 @@ contract DKG is IDKG {
             verifier = address(votingVerifiers[_dimension]);
         }
         distributedKey.keyType = _distributedKeyType;
-        distributedKey.state = DistributedKeyState.ROUND_1_CONTRIBUTION;
+        distributedKey.state = DistributedKeyState.CONTRIBUTION_ROUND_1;
         distributedKey.dimension = _dimension;
         distributedKey.verifier = verifier;
         distributedKey.publicKeyX = 0;
         distributedKey.publicKeyY = 1;
-        distributedKey.startRound1Timestamp = block.timestamp;
         distributedKey.usageCounter = 0;
         distributedKeyCounter += 1;
     }
 
     function submitRound1Contribution(
         uint256 _distributedKeyID,
-        uint256[] calldata _x,
-        uint256[] calldata _y
+        Round1Contribution calldata _round1Contribution
     ) external override onlyCommittee returns (uint8) {
         DistributedKey storage distributedKey = distributedKeys[
             _distributedKeyID
         ];
         (uint8 t, uint8 n) = IFundManager(owner).getDKGParams();
         require(
-            distributedKey.state == DistributedKeyState.ROUND_1_CONTRIBUTION
+            distributedKey.state == DistributedKeyState.CONTRIBUTION_ROUND_1
         );
         // if (
         //     distributedKey.startRound1Timestamp + round1Time > block.timestamp
         // ) {
-        //     distributedKey.distributedKeyState = DistributedKeyState.FAILED;
+        //     distributedKey.distributedKeyState = DistributedKeyState.DISABLED;
         // }
-        // FIXME put _x & _y in a struct => save gas fee to check length(x) == length(y)
-        require(_x.length == _y.length && _x.length == t);
-
-        for (uint i; i < t; i++) {
-            require(CurveBabyJubJub.isOnCurve(_x[i], _y[i]));
-        }
-        distributedKey.round1Counter += 1;
-        distributedKey.round1Contributions.push(
-            Round1Contribution(msg.sender, distributedKey.round1Counter, _x, _y)
+        require(
+            _round1Contribution.x.length == _round1Contribution.y.length &&
+                _round1Contribution.x.length == t
         );
 
+        for (uint i; i < t; i++) {
+            require(
+                CurveBabyJubJub.isOnCurve(
+                    _round1Contribution.x[i],
+                    _round1Contribution.y[i]
+                )
+            );
+        }
+
+        distributedKey.round1DataSubmissions.push(
+            Round1DataSubmission(
+                msg.sender,
+                distributedKey.round1Counter,
+                _round1Contribution.x,
+                _round1Contribution.y
+            )
+        );
         (distributedKey.publicKeyX, distributedKey.publicKeyY) = CurveBabyJubJub
             .pointAdd(
                 distributedKey.publicKeyX,
                 distributedKey.publicKeyY,
-                _x[0],
-                _y[0]
+                _round1Contribution.x[0],
+                _round1Contribution.y[0]
             );
-
+        distributedKey.round1Counter += 1;
         if (distributedKey.round1Counter == n) {
-            distributedKey.state = DistributedKeyState.ROUND_2_CONTRIBUTION;
-            distributedKey.startRound2Timestamp = block.timestamp;
+            distributedKey.state = DistributedKeyState.CONTRIBUTION_ROUND_2;
         }
 
         return distributedKey.round1Counter;
@@ -135,70 +146,90 @@ contract DKG is IDKG {
 
     function submitRound2Contribution(
         uint256 _distributedKeyID,
-        uint8[] calldata _committeeIndexes,
-        uint256[][] calldata _ciphers,
-        bytes[] calldata _proofs
+        Round2Contribution calldata _round2Contribution
     ) external override onlyCommittee {
         DistributedKey storage distributedKey = distributedKeys[
             _distributedKeyID
         ];
         (uint8 t, uint8 n) = IFundManager(owner).getDKGParams();
         require(
-            distributedKey.state == DistributedKeyState.ROUND_2_CONTRIBUTION
+            distributedKey.state == DistributedKeyState.CONTRIBUTION_ROUND_2
         );
-        require(_committeeIndexes.length == n);
-        require(_ciphers.length == 3);
-        uint256 sum = 0;
-        for (uint8 i = 0; i < _committeeIndexes.length; i++) {
-            require(_committeeIndexes[i] >= 1 && _committeeIndexes[i] <= n);
-            if (i != 0) {
-                require(_committeeIndexes[i] != _committeeIndexes[0]);
-            }
-            sum += (uint256)(_committeeIndexes[i]);
-        }
-        require(sum == (n * (n + 1)) / 2);
+        require(_round2Contribution.recipientIndexes.length == n - 1);
+        require(_round2Contribution.ciphers.length == n);
         require(
-            distributedKey.round1Contributions[_committeeIndexes[0]].sender ==
-                msg.sender
+            distributedKey
+                .round1DataSubmissions[_round2Contribution.senderIndex]
+                .sender == msg.sender
         );
+
+        bytes32 bitChecker;
+        bytes32 bitMask;
+        bitChecker = bitChecker | bytes32(1 << _round2Contribution.senderIndex);
+        bitMask = bitMask | bytes32(1 << n);
+        for (
+            uint8 i = 0;
+            i < _round2Contribution.recipientIndexes.length;
+            i++
+        ) {
+            bitChecker =
+                bitChecker |
+                bytes32(1 << _round2Contribution.recipientIndexes[i]);
+            bitMask = bitMask | bytes32(1 << i);
+        }
+        require(bitChecker == bitMask);
+
         // if (
         //     distributedKey.startRound2Timestamp + round2Time > block.timestamp
         // ) {
-        //     distributedKey.distributedKeyState = DistributedKeyState.FAILED;
+        //     distributedKey.distributedKeyState = DistributedKeyState.DISABLED;
         // }
         uint256[] memory publicInputs = new uint256[](
             IVerifier(distributedKey.verifier).getPublicInputsLength()
         );
-        for (uint8 i = 1; i < _committeeIndexes.length; i++) {
-            publicInputs[0] = _committeeIndexes[i];
-            publicInputs[1] = distributedKey
-                .round1Contributions[_committeeIndexes[i] - 1]
-                .x[0];
-            publicInputs[2] = distributedKey
-                .round1Contributions[_committeeIndexes[i] - 1]
-                .y[0];
+        Round1DataSubmission storage senderSubmission = distributedKey
+            .round1DataSubmissions[_round2Contribution.senderIndex - 1];
+        for (
+            uint8 i = 1;
+            i < _round2Contribution.recipientIndexes.length;
+            i++
+        ) {
+            Round1DataSubmission storage recipientSubmission = distributedKey
+                .round1DataSubmissions[
+                    _round2Contribution.recipientIndexes[i] - 1
+                ];
+            publicInputs[0] = _round2Contribution.recipientIndexes[i];
+            publicInputs[1] = recipientSubmission.x[0];
+            publicInputs[2] = recipientSubmission.y[0];
             for (uint8 j = 0; j < t; j++) {
-                publicInputs[3 + j * 2] = distributedKey
-                    .round1Contributions[_committeeIndexes[0]]
-                    .x[j];
-                publicInputs[3 + j * 2 + 1] = distributedKey
-                    .round1Contributions[_committeeIndexes[0]]
-                    .y[j];
+                publicInputs[3 + j * 2] = senderSubmission.x[j];
+                publicInputs[3 + j * 2 + 1] = senderSubmission.y[j];
             }
-            publicInputs[3 + t * 2] = _ciphers[i][0];
-            publicInputs[3 + t * 2 + 1] = _ciphers[i][1];
-            publicInputs[3 + t * 2 + 2] = _ciphers[i][2];
+            publicInputs[3 + t * 2] = _round2Contribution.ciphers[i][0];
+            publicInputs[3 + t * 2 + 1] = _round2Contribution.ciphers[i][1];
+            publicInputs[3 + t * 2 + 2] = _round2Contribution.ciphers[i][2];
 
-            require(_verifyProof(round2Verifier, _proofs[i], publicInputs));
-
-            distributedKey.round2Contributions[_committeeIndexes[i]].push(
-                Round2Contribution(_committeeIndexes[0], _ciphers[i])
+            require(
+                _verifyProof(
+                    round2Verifier,
+                    _round2Contribution.proofs[i],
+                    publicInputs
+                )
             );
+
+            distributedKey
+                .round2DataSubmissions[_round2Contribution.recipientIndexes[i]]
+                .push(
+                    Round2DataSubmission(
+                        _round2Contribution.senderIndex,
+                        _round2Contribution.ciphers[i]
+                    )
+                );
         }
 
         distributedKey.round2Counter += 1;
         if (distributedKey.round2Counter == n) {
-            distributedKey.state == DistributedKeyState.MAIN;   // FIXME
+            distributedKey.state == DistributedKeyState.ACTIVE;
         }
     }
 
@@ -211,36 +242,27 @@ contract DKG is IDKG {
         TallyTracker storage tallyTracker = tallyTrackers[_requestID];
         require(
             tallyTracker.tallyContributionVerifier == address(0) &&
-                tallyTracker.tallyResultContributionVerifier == address(0) &&
                 tallyTracker.resultVerifier == address(0)
         );
         tallyTracker.distributedKeyID = _distributedKeyID;
         tallyTracker.R = _R;
         tallyTracker.M = _M;
         uint8 dimension = distributedKeys[_distributedKeyID].dimension;
-        address tallyContributionVerfier = address(
+        address tallyContributionVerifier = address(
             tallyContributionVerifiers[dimension]
         );
-        address tallyResultContributionVerifier = address(
-            tallyResultContributionVerifiers[dimension]
-        );
         address resultVerifier = address(resultVerifiers[dimension]);
-        require(tallyContributionVerfier != address(0));
-        require(tallyResultContributionVerifier != address(0));
+        require(tallyContributionVerifier != address(0));
         require(resultVerifier != address(0));
         tallyTracker.dao = msg.sender;
-        tallyTracker.tallyContributionVerifier = tallyContributionVerfier;
-        tallyTracker
-            .tallyResultContributionVerifier = tallyResultContributionVerifier;
+        tallyTracker.tallyContributionVerifier = tallyContributionVerifier;
         tallyTracker.resultVerifier = resultVerifier;
         tallyTracker.state = TallyTrackerState.TALLY_CONTRIBUTION;
     }
 
     function submitTallyContribution(
         bytes32 _requestID,
-        uint8 _senderIndex,
-        uint256[][] calldata _Di,
-        bytes calldata _proof
+        TallyContribution calldata _tallyContribution
     ) external override onlyCommittee {
         TallyTracker storage tallyTracker = tallyTrackers[_requestID];
         DistributedKey storage distributedKey = distributedKeys[
@@ -250,33 +272,43 @@ contract DKG is IDKG {
         uint8 dimension = distributedKey.dimension;
 
         require(tallyTracker.state == TallyTrackerState.TALLY_CONTRIBUTION);
-        require(_senderIndex >= 1 && _senderIndex <= n);
-        require(_Di.length == dimension);
+        require(
+            _tallyContribution.senderIndex >= 1 &&
+                _tallyContribution.senderIndex <= n
+        );
+        require(_tallyContribution.Di.length == dimension);
 
-        n = n - 1;
-        Round2Contribution[] storage round2Contributions = distributedKey
-            .round2Contributions[_senderIndex];
+        Round2DataSubmission[] storage round2DataSubmissions = distributedKey
+            .round2DataSubmissions[_tallyContribution.senderIndex];
         IVerifier verifier = IVerifier(tallyTracker.tallyContributionVerifier);
         uint[] memory publicInputs = new uint[](
             verifier.getPublicInputsLength()
         );
+
+        n = n - 1;
         for (uint8 i; i < n; i++) {
-            publicInputs[2 * i] = round2Contributions[i].cipher[0];
-            publicInputs[2 * i + 1] = round2Contributions[i].cipher[1];
-            publicInputs[2 * n + i] = round2Contributions[i].cipher[2];
+            publicInputs[2 * i] = round2DataSubmissions[i].cipher[0];
+            publicInputs[2 * i + 1] = round2DataSubmissions[i].cipher[1];
+            publicInputs[2 * n + i] = round2DataSubmissions[i].cipher[2];
         }
         for (uint8 i; i < dimension; i++) {
             publicInputs[3 * n + 2 * i] = tallyTracker.R[i][0];
             publicInputs[3 * n + 2 * i + 1] = tallyTracker.R[i][1];
-            publicInputs[3 * n + dimension * 2 + 2 * i] = _Di[i][0];
-            publicInputs[3 * n + dimension * 2 + 2 * i + 1] = _Di[i][1];
+            publicInputs[3 * n + dimension * 2 + 2 * i] = _tallyContribution.Di[
+                i
+            ][0];
+            publicInputs[3 * n + dimension * 2 + 2 * i + 1] = _tallyContribution
+                .Di[i][1];
         }
 
         // Verify proof
-        _verifyProof(verifier, _proof, publicInputs);
+        _verifyProof(verifier, _tallyContribution.proof, publicInputs);
 
-        tallyTracker.tallyContributions.push(
-            TallyContribution(_senderIndex, _Di)
+        tallyTracker.tallyDataSubmissions.push(
+            TallyDataSubmission(
+                _tallyContribution.senderIndex,
+                _tallyContribution.Di
+            )
         );
         tallyTracker.tallyCounter += 1;
         if (tallyTracker.tallyCounter == t) {
@@ -284,7 +316,7 @@ contract DKG is IDKG {
         }
     }
 
-    function submitTallyingResult(
+    function submitTallyResult(
         bytes32 _requestID,
         uint256[] calldata _result,
         bytes calldata _proof
@@ -315,7 +347,7 @@ contract DKG is IDKG {
                 publicInputs
             )
         );
-        IDKGRequest(tallyTracker.dao).submitTallyingResult(_requestID, _result);
+        IDKGRequest(tallyTracker.dao).submitTallyResult(_requestID, _result);
         tallyTracker.state = TallyTrackerState.END;
     }
 
@@ -345,12 +377,12 @@ contract DKG is IDKG {
         return distributedKeys[_distributedKeyID].keyType;
     }
 
-    function getRound1Contribution(
+    function getRound1DataSubmission(
         uint256 _distributedKeyID,
         uint8 _senderIndex
-    ) external view override returns (Round1Contribution memory) {
+    ) external view override returns (Round1DataSubmission memory) {
         return
-            distributedKeys[_distributedKeyID].round1Contributions[
+            distributedKeys[_distributedKeyID].round1DataSubmissions[
                 _senderIndex - 1
             ];
     }
@@ -361,7 +393,7 @@ contract DKG is IDKG {
         DistributedKey storage distributedKey = distributedKeys[
             _distributedKeyID
         ];
-        require(distributedKey.state == DistributedKeyState.MAIN);
+        require(distributedKey.state == DistributedKeyState.ACTIVE);
         return (distributedKey.publicKeyX, distributedKey.publicKeyY);
     }
 
@@ -393,7 +425,7 @@ contract DKG is IDKG {
 
         uint8[] memory listIndex = new uint8[](t);
         for (uint8 i; i < t; i++) {
-            listIndex[i] = tallyTracker.tallyContributions[i].i;
+            listIndex[i] = tallyTracker.tallyDataSubmissions[i].senderIndex;
         }
 
         uint256[] memory lagrangeCoefficient = Math.computeLagrangeCoefficient(
@@ -405,12 +437,12 @@ contract DKG is IDKG {
             sumDy[i] = 1;
         }
         for (uint8 i; i < t; i++) {
-            TallyContribution memory tallyContribution = tallyTracker
-                .tallyContributions[i];
+            TallyDataSubmission memory tallyDataSubmission = tallyTracker
+                .tallyDataSubmissions[i];
             for (uint8 j; j < dimension; j++) {
                 (uint256 tmpX, uint256 tmpY) = CurveBabyJubJub.pointMul(
-                    tallyContribution.Di[j][0],
-                    tallyContribution.Di[j][1],
+                    tallyDataSubmission.Di[j][0],
+                    tallyDataSubmission.Di[j][1],
                     lagrangeCoefficient[i]
                 );
                 (sumDx[j], sumDy[j]) = CurveBabyJubJub.pointAdd(
