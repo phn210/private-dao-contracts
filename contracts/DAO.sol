@@ -1,22 +1,22 @@
 pragma solidity ^0.8.0;
 
-import './interfaces/IDAO.sol';
-import './interfaces/IDKG.sol';
-import './interfaces/IDKGRequest.sol';
-import './interfaces/IFundManager.sol';
-import './interfaces/ITimelock.sol';
+import "./interfaces/IDAO.sol";
+import "./interfaces/IDKG.sol";
+import "./interfaces/IDKGRequest.sol";
+import "./interfaces/IFundManager.sol";
+import "./interfaces/ITimelock.sol";
 
 contract DAO is IDAO, IDKGRequest {
     // Used to read proposals data
     uint256 internal constant PROPOSAL_STORAGE_SIZE = 6;
 
-    // Number 
+    // Number
     uint256 internal constant VOTE_OPTIONS = 3;
 
     // Configuration for governor processes.
     Config public config;
 
-    // 
+    //
     IFundManager public fundManager;
 
     // The address of the DKG contract.
@@ -52,7 +52,7 @@ contract DAO is IDAO, IDKGRequest {
     modifier onlyDAO() {
         require(
             msg.sender == address(this),
-            'DAO::onlyDAO: call must come from the DAO contract itself'
+            "DAO::onlyDAO: call must come from the DAO contract itself"
         );
         _;
     }
@@ -60,7 +60,7 @@ contract DAO is IDAO, IDKGRequest {
     modifier onlyFundManager() {
         require(
             msg.sender == address(fundManager),
-            'DAO::onlyFundManager: call must come from the FundManager contract'
+            "DAO::onlyFundManager: call must come from the FundManager contract"
         );
         _;
     }
@@ -68,7 +68,7 @@ contract DAO is IDAO, IDKGRequest {
     modifier onlyDKG() override {
         require(
             msg.sender == address(dkg),
-            'DAO::onlyDKG: call must come from the DKG contract'
+            "DAO::onlyDKG: call must come from the DKG contract"
         );
         _;
     }
@@ -116,7 +116,7 @@ contract DAO is IDAO, IDKGRequest {
         
         // Check vote encryption key is usable and dkg type is correct
         require(
-            dkg.getState(distributedKeyId) == IDKG.DistributedKeyState.MAIN &&
+            dkg.getDistributedKeyState(distributedKeyId) == IDKG.DistributedKeyState.ACTIVE &&
             dkg.getType(distributedKeyId) == IDKG.DistributedKeyType.VOTING
         );
         
@@ -126,12 +126,14 @@ contract DAO is IDAO, IDKGRequest {
                 
         // Assign proposal's data
         uint64 startBlock = uint64(block.number + config.pendingPeriod);
-        
+
         newProposal.id = hashProposal(actions, descriptionHash);
         newProposal.startBlock = startBlock;
 
         bytes32 requestId = getRequestID(
-            distributedKeyId, address(this), proposalId
+            distributedKeyId,
+            address(this),
+            proposalId
         );
 
         // Assign dkg request data for this proposal
@@ -139,9 +141,9 @@ contract DAO is IDAO, IDKGRequest {
         request.distributedKeyID = distributedKeyId;
         for (uint8 i; i < dimension; i++) {
             request.R[i][0] = 0;
-            request.R[i][1] = 0;
+            request.R[i][1] = 1;
             request.M[i][0] = 0;
-            request.M[i][1] = 0;
+            request.M[i][1] = 1;
         }
 
         emit ProposalCreated(
@@ -165,9 +167,7 @@ contract DAO is IDAO, IDKGRequest {
         uint256[][] calldata _R,
         uint256[][] calldata _M,
         bytes calldata _proof
-    ) external override {
-
-    }
+    ) external override {}
 
     /**
      * Tally the result of a proposal.
@@ -192,7 +192,7 @@ contract DAO is IDAO, IDKGRequest {
         emit ProposalTallyingStarted(proposalId, requestId);
     }
 
-    function submitTallyingResult(
+    function submitTallyResult(
         bytes32 _requestID,
         uint256[] calldata _result
     ) external override onlyDKG {
@@ -202,7 +202,7 @@ contract DAO is IDAO, IDKGRequest {
             "DAO::submitTallyingResult: request does not exist"
         );
         request.result = _result;
-        request.respondedAt = uint32(block.number);
+        request.respondedAt = block.number;
     }
 
     /**
@@ -254,7 +254,7 @@ contract DAO is IDAO, IDKGRequest {
         );
 
         Proposal storage proposal = proposals[proposalId];
-        uint32 eta = uint32(block.number + config.timelockPeriod);
+        uint256 eta = block.number + config.timelockPeriod;
 
         for (uint256 i = 0; i < actions.length; i++) {
             _queueTransaction(
@@ -283,7 +283,7 @@ contract DAO is IDAO, IDKGRequest {
         );
 
         Proposal storage proposal = proposals[proposalId];
-        uint32 eta = uint32(block.number + config.timelockPeriod);
+        uint256 eta = block.number + config.timelockPeriod;
 
         for (uint256 i = 0; i < actions.length; i++) {
             _executeTransaction(
@@ -344,7 +344,10 @@ contract DAO is IDAO, IDKGRequest {
      * @param actions Proposal's actions
      * @param descriptionHash IPFS hash of proposal's description
      */
-    function hashProposal(Action[] calldata actions, bytes32 descriptionHash) public pure returns (uint256) {
+    function hashProposal(
+        Action[] calldata actions,
+        bytes32 descriptionHash
+    ) public pure returns (uint256) {
         return uint256(keccak256(abi.encode(actions, descriptionHash)));
     }
 
@@ -365,9 +368,16 @@ contract DAO is IDAO, IDKGRequest {
             return ProposalState.Canceled;
         } else if (block.number <= proposal.startBlock) {
             return ProposalState.Pending;
-        } else if (block.number <= (proposal.startBlock + daoConfig.votingPeriod)) {
+        } else if (
+            block.number <= (proposal.startBlock + daoConfig.votingPeriod)
+        ) {
             return ProposalState.Active;
-        } else if (block.number <= (proposal.startBlock + daoConfig.votingPeriod + daoConfig.tallyingPeriod)) {
+        } else if (
+            block.number <=
+            (proposal.startBlock +
+                daoConfig.votingPeriod +
+                daoConfig.tallyingPeriod)
+        ) {
             return ProposalState.Tallying;
         } else if (
             proposal.forVotes + proposal.againstVotes + proposal.abstainVotes == 0 ||
@@ -380,7 +390,9 @@ contract DAO is IDAO, IDKGRequest {
             return ProposalState.Succeeded;
         } else if (proposal.executed) {
             return ProposalState.Executed;
-        } else if (block.timestamp >= (proposal.eta + daoConfig.queuingPeriod)) {
+        } else if (
+            block.timestamp >= (proposal.eta + daoConfig.queuingPeriod)
+        ) {
             return ProposalState.Expired;
         } else {
             return ProposalState.Queued;
@@ -402,7 +414,8 @@ contract DAO is IDAO, IDKGRequest {
         address _requestor,
         uint256 _nonce
     ) public pure override returns (bytes32) {
-        return keccak256(abi.encodePacked(_distributedKeyId, _requestor, _nonce));
+        return
+            keccak256(abi.encodePacked(_distributedKeyId, _requestor, _nonce));
     }
 
     function getRequest(
@@ -432,7 +445,7 @@ contract DAO is IDAO, IDKGRequest {
         uint _value,
         string calldata _signature,
         bytes calldata _data, 
-        uint32 _eta
+        uint256 _eta
     ) internal returns (bytes32) {
         require(
             _eta >= (block.number + config.timelockPeriod),
@@ -466,7 +479,7 @@ contract DAO is IDAO, IDKGRequest {
         uint _value,
         string calldata _signature,
         bytes calldata _data, 
-        uint32 _eta
+        uint256 _eta
     ) internal {
         bytes32 txHash = keccak256(
             abi.encode(_target, _value, _signature, _data, _eta)
@@ -489,7 +502,7 @@ contract DAO is IDAO, IDKGRequest {
         uint _value,
         string calldata _signature,
         bytes calldata _data, 
-        uint32 _eta
+        uint256 _eta
     ) internal returns (bytes memory) {
         bytes32 txHash = keccak256(
             abi.encode(_target, _value, _signature, _data, _eta)

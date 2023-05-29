@@ -7,7 +7,7 @@ interface IDKGRequest {
         uint256[][] R;
         uint256[][] M;
         uint256[] result;
-        uint32 respondedAt;
+        uint256 respondedAt;
     }
 
     /*====================== MODIFIER ======================*/
@@ -16,13 +16,13 @@ interface IDKGRequest {
 
     /*================== EXTERNAL FUNCTION ==================*/
 
-    function submitTallyingResult(
+    function submitTallyResult(
         bytes32 _requestID,
         uint256[] calldata _result
     ) external;
 
     /*==================== VIEW FUNCTION ====================*/
-    
+
     function getRequestID(
         uint256 _distributedKeyID,
         address _requestor,

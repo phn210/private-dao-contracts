@@ -36,9 +36,9 @@ interface IDAO {
         uint256 againstVotes;   // Current number of votes in opposition to this proposal.
         uint256 abstainVotes;   // Current number of votes in abstain to this proposal.
         uint64 startBlock;      // The block at which voting begins: veTrava must be locked prior to this block to possess voting power.
-        uint32 eta;             // The block that the proposal will be available for execution, set once the vote succeeds.
         bool canceled;          // Flag marking whether the proposal has been canceled.
         bool executed;          // Flag marking whether the proposal has been executed.
+        uint256 eta;             // The block that the proposal will be available for execution, set once the vote succeeds.
     }
 
     struct Action {
@@ -83,7 +83,7 @@ interface IDAO {
     /**
      * @notice Emitted when a proposal is queued in the Timelock.
      */
-    event ProposalQueued(uint256 proposalId, uint32 eta);
+    event ProposalQueued(uint256 proposalId, uint256 eta);
 
     /**
      * @notice Emitted when a proposal is executed from Timelock.

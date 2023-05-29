@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "./IDKGRequest.sol";
+
 interface IFundManager {
     enum FundingRoundState {
         PENDING,
@@ -17,20 +19,15 @@ interface IFundManager {
         uint256[] listCommitment;
         mapping(address => uint256) balances;
         mapping(address => uint256) daoBalances;
-        FundingRoundState state;
-        uint256 pendingStartBN;
-        uint256 activeStartBN;
-        uint256 tallyStartBN;
-        uint256 succeededBN;
-        uint256 finalizedBN;
-        uint256 failedBN;
+        uint256 launchedAt;
+        uint256 finalizedAt;
     }
 
     struct FundingRoundConfig {
         uint256 fundingRoundInterval;
-        uint256 pendingPeriodBN;
-        uint256 activePeriodBN;
-        uint256 tallyingPeriodBN;
+        uint256 pendingPeriod;
+        uint256 activePeriod;
+        uint256 tallyPeriod;
     }
 
     struct MerkleTreeConfig {
@@ -55,26 +52,28 @@ interface IFundManager {
     ) external returns (bytes32);
 
     function fund(
-        bytes32 _requestID,
+        uint256 _fundingRoundID,
         uint256 _commitment,
         uint256[][] calldata _R,
         uint256[][] calldata _M,
         bytes calldata _proof
     ) external payable;
 
-    function startTallying(bytes32 _requestID) external;
+    function startTallying(uint256 _fundingRoundID) external;
 
-    function finalizeFundingRound(bytes32 _requestID) external;
+    function finalizeFundingRound(uint256 _fundingRoundID) external;
 
-    function refund(bytes32 _requestID) external;
+    function refund(uint256 _fundingRoundID) external;
 
-    function withdrawFund(bytes32 _requestID, address _dao) external;
+    function withdrawFund(uint256 _fundingRoundID, address _dao) external;
 
     /*==================== VIEW FUNCTION ====================*/
 
     function isCommittee(address _sender) external view returns (bool);
 
     function isWhitelistedDAO(address _sender) external view returns (bool);
+
+    function isFounder(address _sender) external view returns (bool);
 
     function getDKGParams() external view returns (uint8, uint8);
 }
