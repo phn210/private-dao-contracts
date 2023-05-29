@@ -311,23 +311,22 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
         uint256 endPending = fundingRound.launchedAt + config.pendingPeriod;
         uint256 endActive = endPending + config.activePeriod;
         uint256 endTallying = endActive + config.tallyPeriod;
-        if (fundingRound.finalizedAt != 0) {
-            return FundingRoundState.FINALIZED;
+        if (block.number <= endPending) {
+            return FundingRoundState.PENDING;
+        }
+        if (endPending < block.number && block.number <= endActive) {
+            return FundingRoundState.ACTIVE;
         }
         if (
-            endActive < request.respondedAt &&
-            request.respondedAt <= endTallying
+            endActive < request.respondedAt && request.respondedAt <= endTallying
         ) {
             return FundingRoundState.SUCCEEDED;
         }
         if (endActive < block.number && block.number <= endTallying) {
             return FundingRoundState.TALLYING;
         }
-        if (endPending < block.number && block.number <= endActive) {
-            return FundingRoundState.ACTIVE;
-        }
-        if (block.number <= endPending) {
-            return FundingRoundState.PENDING;
+        if (fundingRound.finalizedAt != 0) {
+            return FundingRoundState.FINALIZED;
         }
         return FundingRoundState.FAILED;
     }
