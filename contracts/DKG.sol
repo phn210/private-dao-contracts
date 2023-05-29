@@ -60,6 +60,7 @@ contract DKG is IDKG {
         DistributedKeyType _distributedKeyType
     ) external override onlyFounder returns (uint256 distributedKeyID) {
         distributedKeyID = distributedKeyCounter;
+        distributedKeyCounter += 1;
         DistributedKey storage distributedKey = distributedKeys[
             distributedKeyID
         ];
@@ -83,7 +84,8 @@ contract DKG is IDKG {
         distributedKey.publicKeyX = 0;
         distributedKey.publicKeyY = 1;
         distributedKey.usageCounter = 0;
-        distributedKeyCounter += 1;
+
+        emit DistributedKeyGenerated(distributedKeyID);
     }
 
     function submitRound1Contribution(
@@ -129,6 +131,8 @@ contract DKG is IDKG {
             );
 
         distributedKey.round1Counter += 1;
+
+        emit Round1DataSubmitted(msg.sender);
         return distributedKey.round1Counter;
     }
 
@@ -171,14 +175,14 @@ contract DKG is IDKG {
         uint256[] memory publicInputs = new uint256[](
             IVerifier(distributedKey.verifier).getPublicInputsLength()
         );
-        Round1DataSubmission storage senderSubmission = distributedKey
+        Round1DataSubmission memory senderSubmission = distributedKey
             .round1DataSubmissions[_round2Contribution.senderIndex - 1];
         for (
             uint8 i = 1;
             i < _round2Contribution.recipientIndexes.length;
             i++
         ) {
-            Round1DataSubmission storage recipientSubmission = distributedKey
+            Round1DataSubmission memory recipientSubmission = distributedKey
                 .round1DataSubmissions[
                     _round2Contribution.recipientIndexes[i] - 1
                 ];
@@ -212,6 +216,10 @@ contract DKG is IDKG {
         }
 
         distributedKey.round2Counter += 1;
+        emit Round2DataSubmitted(msg.sender);
+        if (distributedKey.round2Counter == n) {
+            emit DistributedKeyActivated(_distributedKeyID);
+        }
     }
 
     function startTallying(
@@ -238,6 +246,8 @@ contract DKG is IDKG {
         tallyTracker.dao = msg.sender;
         tallyTracker.contributionVerifier = tallyContributionVerifier;
         tallyTracker.resultVerifier = resultVerifier;
+
+        emit TallyStarted(_requestID);
     }
 
     function submitTallyContribution(
@@ -260,7 +270,7 @@ contract DKG is IDKG {
         );
         require(_tallyContribution.Di.length == dimension);
 
-        Round2DataSubmission[] storage round2DataSubmissions = distributedKey
+        Round2DataSubmission[] memory round2DataSubmissions = distributedKey
             .round2DataSubmissions[_tallyContribution.senderIndex];
         IVerifier verifier = IVerifier(tallyTracker.contributionVerifier);
         uint[] memory publicInputs = new uint[](
@@ -293,6 +303,8 @@ contract DKG is IDKG {
             )
         );
         tallyTracker.tallyCounter += 1;
+
+        emit TallyContributionSubmitted(msg.sender);
     }
 
     function submitTallyResult(
@@ -331,6 +343,8 @@ contract DKG is IDKG {
         IDKGRequest(tallyTracker.dao).submitTallyResult(_requestID, _result);
         distributedKey.usageCounter += 1;
         tallyTracker.resultSubmitted = true;
+
+        emit TallyResultSubmitted(msg.sender, _requestID, _result);
     }
 
     /*==================== VIEW FUNCTION ====================*/

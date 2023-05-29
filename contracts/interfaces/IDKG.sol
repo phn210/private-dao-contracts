@@ -116,7 +116,6 @@ interface IDKG {
         address dao;
         address contributionVerifier;
         address resultVerifier;
-        uint256[] tallyResult;
     }
 
     struct TallyDataSubmission {
@@ -128,6 +127,26 @@ interface IDKG {
         uint256[][] Di;
         bytes proof;
     }
+
+    /*======================== EVENT ========================*/
+
+    event DistributedKeyGenerated(uint256 indexed distributedKeyID);
+
+    event Round1DataSubmitted(address indexed submitter);
+
+    event Round2DataSubmitted(address indexed submitter);
+
+    event DistributedKeyActivated(uint256 indexed distributedKeyID);
+
+    event TallyStarted(bytes32 indexed requestID);
+
+    event TallyContributionSubmitted(address indexed submitter);
+
+    event TallyResultSubmitted(
+        address indexed submitter,
+        bytes32 indexed requestID,
+        uint256[] indexed result
+    );
 
     /*====================== MODIFIER ======================*/
 

@@ -35,6 +35,46 @@ interface IFundManager {
         address poseidon;
     }
 
+    /*======================= EVENT =======================*/
+
+    event FundingRoundApplied(address indexed dao);
+
+    event FundingRoundLaunched(
+        uint256 indexed fundingRoundID,
+        bytes32 indexed requestID
+    );
+
+    event Funded(
+        uint256 indexed fundingRoundID,
+        address sender,
+        uint256 value,
+        uint256 indexed commitment
+    );
+
+    event TallyStarted(uint256 indexed fundingRoundID, bytes32 indexed requestID);
+
+    event TallyResultSubmitted(
+        bytes32 indexed requestID,
+        uint256[] indexed result
+    );
+
+    event LeafInserted(uint256 indexed commitment);
+    
+    event FundingRoundFinalized(uint256 indexed fundingRoundID);
+
+    event FundingRoundFailed(uint256 indexed fundingRoundID);
+
+    event Refunded(
+        uint256 indexed fundingRoundID,
+        address indexed refundee,
+        uint256 indexed value
+    );
+
+    event FundWithdrawed(
+        uint256 indexed fundingRoundID,
+        address indexed dao,
+        uint256 indexed value
+    );
     /*====================== MODIFIER ======================*/
 
     modifier onlyFounder() virtual;
@@ -49,7 +89,7 @@ interface IFundManager {
 
     function launchFundingRound(
         uint256 _distributedKeyID
-    ) external returns (bytes32);
+    ) external returns (uint256, bytes32);
 
     function fund(
         uint256 _fundingRoundID,
