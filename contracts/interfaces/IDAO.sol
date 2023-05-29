@@ -36,7 +36,7 @@ interface IDAO {
         uint256 againstVotes;   // Current number of votes in opposition to this proposal.
         uint256 abstainVotes;   // Current number of votes in abstain to this proposal.
         uint64 startBlock;      // The block at which voting begins: veTrava must be locked prior to this block to possess voting power.
-        uint32 eta;             // The timestamp that the proposal will be available for execution, set once the vote succeeds.
+        uint32 eta;             // The block that the proposal will be available for execution, set once the vote succeeds.
         bool canceled;          // Flag marking whether the proposal has been canceled.
         bool executed;          // Flag marking whether the proposal has been executed.
     }
@@ -65,22 +65,25 @@ interface IDAO {
      */
     event ProposalCanceled(uint256 proposalId);
 
+    event ProposalTallyingStarted(
+        uint256 proposalId,
+        bytes32 requestId
+    );
+
     /**
-     * @dev FIXME update for ZKP
      * @notice Emitted when a valid proposal is created.
      */
-    event ProposalTallied(
+    event ProposalFinalized(
         uint256 proposalId, // Unique hash for looking up a proposal.
         uint256 forVotes, // Current number of votes in favor of this proposal.
         uint256 againstVotes, // Current number of votes in opposition to this proposal.
-        uint256 abstainVotes, // Current number of votes in abstain to this proposal.
-        bool approved // Whether the proposal has been approved after voting period.
+        uint256 abstainVotes // Current number of votes in abstain to this proposal.
     );
 
     /**
      * @notice Emitted when a proposal is queued in the Timelock.
      */
-    event ProposalQueued(uint256 proposalId, uint256 eta);
+    event ProposalQueued(uint256 proposalId, uint32 eta);
 
     /**
      * @notice Emitted when a proposal is executed from Timelock.
@@ -97,7 +100,7 @@ interface IDAO {
 
     function queue(Action[] memory actions, bytes32 descriptionHash) external;
 
-    function execute(Action[] memory actions, bytes32 descriptionHash) external;
+    function execute(Action[] memory actions, bytes32 descriptionHash) external payable;
 
     function cancel(Action[] memory actions, bytes32 descriptionHash) external;
 

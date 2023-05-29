@@ -104,21 +104,27 @@ contract DAO is IDAO, IDKGRequest {
      * @return Proposal's index
      */
     function propose(Action[] calldata actions, bytes32 descriptionHash) external override returns (uint256) {
+        
+        uint256 proposalId = hashProposal(actions, descriptionHash);
+        Proposal storage newProposal = proposals[proposalId];
+        
+        // Check new proposal has  not exist
+        require(
+            newProposal.startBlock == 0,
+            "DAO::propose: proposal already existed"
+        );
+        
+        // Check vote encryption key is usable and dkg type is correct
         require(
             dkg.getState(distributedKeyId) == IDKG.DistributedKeyState.MAIN &&
             dkg.getType(distributedKeyId) == IDKG.DistributedKeyType.VOTING
         );
         
+        // Check vote encryption key's verifier has the correct dimenstion
         uint8 dimension = dkg.getDimension(distributedKeyId);
         require(dimension == VOTE_OPTIONS, "DAO::propose: can not use distributed key with the wrong dimension");
-        
-        uint256 proposalId = hashProposal(actions, descriptionHash);
-        Proposal storage newProposal = proposals[proposalId];
-        require(
-            newProposal.startBlock == 0,
-            "DAO::propose: proposal already existed"
-        );
-
+                
+        // Assign proposal's data
         uint64 startBlock = uint64(block.number + config.pendingPeriod);
         
         newProposal.id = hashProposal(actions, descriptionHash);
@@ -128,6 +134,7 @@ contract DAO is IDAO, IDKGRequest {
             distributedKeyId, address(this), proposalId
         );
 
+        // Assign dkg request data for this proposal
         Request storage request = requests[requestId];
         request.distributedKeyID = distributedKeyId;
         for (uint8 i; i < dimension; i++) {
@@ -146,7 +153,9 @@ contract DAO is IDAO, IDKGRequest {
             descriptionHash
         );
 
+        // Increase proposal counter
         ++proposalCount;
+
         return proposalCount;
     }
 
@@ -165,7 +174,71 @@ contract DAO is IDAO, IDKGRequest {
      * @param proposalId The id of the proposal to tally
      */
     function tally(uint256 proposalId) external override {
+        require(
+            state(proposalId) == ProposalState.Tallying,
+            "DAO::tally: not in the tallying period"
+        );
 
+        bytes32 requestId = getProposalRequestId(proposalId);
+        Request storage request = requests[requestId];
+
+        dkg.startTallying(
+            requestId,
+            request.distributedKeyID,
+            request.R,
+            request.M
+        );
+
+        emit ProposalTallyingStarted(proposalId, requestId);
+    }
+
+    function submitTallyingResult(
+        bytes32 _requestID,
+        uint256[] calldata _result
+    ) external override onlyDKG {
+        Request storage request = requests[_requestID];
+        require(
+            request.distributedKeyID == distributedKeyId,
+            "DAO::submitTallyingResult: request does not exist"
+        );
+        request.result = _result;
+        request.respondedAt = uint32(block.number);
+    }
+
+    /**
+     * Finalize the result of a proposal.
+     * @param proposalId The id of the proposal to finalize
+     */
+    function finalize(uint256 proposalId) external override {
+        require(
+            state(proposalId) == ProposalState.Tallying,
+            "DAO::finalize: not in the tallying period"
+        );
+
+        bytes32 requestId = getProposalRequestId(proposalId);
+        Request storage request = requests[requestId];
+
+        require(
+            request.respondedAt > 0,
+            "DAO::finalize: DKG request has not been responded"
+        );
+
+        Proposal storage proposal = proposals[proposalId];
+
+        uint256 forVotes = request.result[uint256(VoteOption.For)];
+        uint256 againstVotes = request.result[uint256(VoteOption.Against)];
+        uint256 abstainVotes = request.result[uint256(VoteOption.Abstain)];
+
+        proposal.forVotes = forVotes;
+        proposal.againstVotes = againstVotes;
+        proposal.abstainVotes = abstainVotes;
+
+        emit ProposalFinalized(
+            proposalId, 
+            forVotes, 
+            againstVotes, 
+            abstainVotes
+        );
     }
 
     /**
@@ -174,7 +247,27 @@ contract DAO is IDAO, IDKGRequest {
      * @param descriptionHash IPFS hash of proposal's description
      */
     function queue(Action[] calldata actions, bytes32 descriptionHash) external override {
+        uint256 proposalId = hashProposal(actions, descriptionHash);
+        require(
+            state(proposalId) == ProposalState.Tallying,
+            "DAO::queue: Oroposal has not been finalized yet"
+        );
 
+        Proposal storage proposal = proposals[proposalId];
+        uint32 eta = uint32(block.number + config.timelockPeriod);
+
+        for (uint256 i = 0; i < actions.length; i++) {
+            _queueTransaction(
+                actions[i].target,
+                actions[i].value,
+                actions[i].signature,
+                actions[i].data,
+                eta
+            );
+        }
+        proposal.eta = eta;
+
+        emit ProposalQueued(proposalId, eta);
     }
 
     /**
@@ -182,8 +275,28 @@ contract DAO is IDAO, IDKGRequest {
      * @param actions Proposal's actions
      * @param descriptionHash IPFS hash of proposal's description
      */
-    function execute(Action[] calldata actions, bytes32 descriptionHash) external override {
+    function execute(Action[] calldata actions, bytes32 descriptionHash) external payable override {
+        uint256 proposalId = hashProposal(actions, descriptionHash);
+        require(
+            state(proposalId) == ProposalState.Queued,
+            "DAO::queue: Proposal has not been queued yet"
+        );
 
+        Proposal storage proposal = proposals[proposalId];
+        uint32 eta = uint32(block.number + config.timelockPeriod);
+
+        for (uint256 i = 0; i < actions.length; i++) {
+            _executeTransaction(
+                actions[i].target,
+                actions[i].value,
+                actions[i].signature,
+                actions[i].data,
+                eta
+            );
+        }
+        proposal.eta = eta;
+
+        emit ProposalQueued(proposalId, eta);
     }
 
     /**
@@ -192,21 +305,34 @@ contract DAO is IDAO, IDKGRequest {
      * @param descriptionHash IPFS hash of proposal's description
      */
     function cancel(Action[] calldata actions, bytes32 descriptionHash) external override {
+        uint256 proposalId = hashProposal(actions, descriptionHash);
+        require(
+            state(proposalId) != ProposalState.Executed,
+            "DAO::cancel: Cannot cancel executed proposal"
+        );
+        require(
+            state(proposalId) != ProposalState.Canceled,
+            "DAO::cancel: Cannot cancel canceled proposal"
+        );
 
+        Proposal storage proposal = proposals[proposalId];
+
+        proposal.canceled = true;
+
+        // FIXME consider to cancel queued proposals only or not
+        for (uint256 i = 0; i < actions.length; i++) {
+            _cancelTransaction(
+                actions[i].target,
+                actions[i].value,
+                actions[i].signature,
+                actions[i].data,
+                proposal.eta
+            );
+        }
+
+        emit ProposalCanceled(proposalId);
     }
 
-    function submitTallyingResult(
-        bytes32 _requestID,
-        uint256[] calldata _result
-    ) external override {}
-
-    /**
-     * Finalize the result of a proposal.
-     * @param proposalId The id of the proposal to finalize
-     */
-    function finalize(uint256 proposalId) external override {
-
-    }
     /**
      * ==========================
      * ===== VIEW FUNCTIONs =====
@@ -230,6 +356,7 @@ contract DAO is IDAO, IDKGRequest {
     function state(uint256 proposalId) public view returns (ProposalState) {
         Proposal memory proposal = proposals[proposalId];
         Config memory daoConfig = config;
+        Request memory request = requests[getProposalRequestId((proposalId))];
         require(
             proposal.startBlock > 0,
             "DAO::state: proposal not existed."
@@ -242,7 +369,10 @@ contract DAO is IDAO, IDKGRequest {
             return ProposalState.Active;
         } else if (block.number <= (proposal.startBlock + daoConfig.votingPeriod + daoConfig.tallyingPeriod)) {
             return ProposalState.Tallying;
-        } else if (proposal.forVotes + proposal.againstVotes + proposal.abstainVotes == 0) {
+        } else if (
+            proposal.forVotes + proposal.againstVotes + proposal.abstainVotes == 0 ||
+            request.respondedAt > (proposal.startBlock + daoConfig.votingPeriod + daoConfig.tallyingPeriod)
+        ) {
             return ProposalState.Expired;
         } else if (proposal.forVotes <= proposal.againstVotes) {
             return ProposalState.Defeated;
@@ -257,9 +387,13 @@ contract DAO is IDAO, IDKGRequest {
         }
     }
 
+    function getProposalRequestId(uint256 proposalId) public view returns (bytes32 requestId) {
+        requestId = getRequestID(distributedKeyId, address(this), proposalId);
+    }
+
     /**
      * =================================
-     * ===== DKG REQUEST FUNCTIONs =====
+     * ===== DKG REQUEST FUNCTIONS =====
      * =================================
      */
 
@@ -286,4 +420,123 @@ contract DAO is IDAO, IDKGRequest {
     function getM(
         bytes32 _requestID
     ) external view override returns (uint256[][] memory) {}
+
+    /**
+     * ==============================
+     * ===== INTERNAL FUNCTIONS =====
+     * ==============================
+     */
+
+    function _queueTransaction(
+        address _target,
+        uint _value,
+        string calldata _signature,
+        bytes calldata _data, 
+        uint32 _eta
+    ) internal returns (bytes32) {
+        require(
+            _eta >= (block.number + config.timelockPeriod),
+            "DAO::_queueTransaction: Estimated execution block must satisfy delay"
+        );
+
+        bytes32 txHash = keccak256(
+            abi.encode(_target, _value, _signature, _data, _eta)
+        );
+
+        require(
+            !queuedTransactions[txHash],
+            "DAO::_executeTransaction: Transaction has been queued."
+        );
+
+        queuedTransactions[txHash] = true;
+
+        // emit TransactionQueued(
+        //     txHash,
+        //     _target,
+        //     _value,
+        //     _signature,
+        //     _data,
+        //     _eta
+        // );
+        return txHash;
+    }
+
+    function _cancelTransaction(
+        address _target,
+        uint _value,
+        string calldata _signature,
+        bytes calldata _data, 
+        uint32 _eta
+    ) internal {
+        bytes32 txHash = keccak256(
+            abi.encode(_target, _value, _signature, _data, _eta)
+        );
+
+        queuedTransactions[txHash] = false;
+
+        // emit TransactionCancelled(
+        //     txHash,
+        //     _target,
+        //     _value,
+        //     _signature,
+        //     _data,
+        //     _eta
+        // );
+    }
+
+    function _executeTransaction(
+        address _target,
+        uint _value,
+        string calldata _signature,
+        bytes calldata _data, 
+        uint32 _eta
+    ) internal returns (bytes memory) {
+        bytes32 txHash = keccak256(
+            abi.encode(_target, _value, _signature, _data, _eta)
+        );
+        require(
+            queuedTransactions[txHash],
+            "DAO::_executeTransaction: Transaction hasn't been queued."
+        );
+        require(
+            block.number >= _eta,
+            "DAO::_executeTransaction: Transaction hasn't surpassed time lock."
+        );
+        require(
+            block.number <= (_eta + config.queuingPeriod),
+            "DAO::_executeTransaction: Transaction is expired."
+        );
+
+        queuedTransactions[txHash] = false;
+
+        bytes memory callData;
+
+        if (bytes(_signature).length == 0) {
+            callData = _data;
+        } else {
+            callData = abi.encodePacked(
+                bytes4(keccak256(bytes(_signature))),
+                _data
+            );
+        }
+
+        (bool success, bytes memory returnData) = _target.call{value: _value}(
+            callData
+        );
+        require(
+            success,
+            "Timelock::executeTransaction: Transaction execution reverted."
+        );
+
+        // emit TransactionExecuted(
+        //     txHash,
+        //     _target,
+        //     _value,
+        //     _signature,
+        //     _data,
+        //     _eta
+        // );
+
+        return returnData;
+    }
 }
