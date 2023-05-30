@@ -15,7 +15,7 @@ pragma solidity ^0.8.0;
 import "../../libs/Pairing.sol";
 import "../../interfaces/IVerifier.sol";
 
-contract FundVerifierDim3 is IVerifier {
+contract FundingVerifierDim3 is IVerifier {
     using Pairing for *;
     struct VerifyingKey {
         Pairing.G1Point alfa1;

@@ -377,4 +377,10 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
                 _publicInputs
             );
     }
+
+    // FOR TEST PURPOSE
+
+    function addWhitelistedDAO(address _dao) external onlyFounder {
+        isWhitelistedDAO[_dao] = true;
+    }
 }

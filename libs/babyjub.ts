@@ -1,7 +1,7 @@
 // @ts-ignore
 import { babyJub } from "circomlibjs";
 import bigInt, { BigInteger, BigNumber } from "big-integer";
-import Utils from "./utils";
+import { Utils } from "./utils";
 
 namespace BabyJub {
     export const primeR: BigInteger = bigInt(babyJub.p, 10);
@@ -48,7 +48,9 @@ namespace BabyJub {
     }
 
     export function unpackPoint(packedPoint: Buffer) {
-        return Utils.getBigIntegerArray(babyJub.unpackPoint(packedPoint));
+        return Utils.getBigIntegerArray(
+            babyJub.unpackPoint(packedPoint) as Array<BigInt>
+        );
     }
 }
 

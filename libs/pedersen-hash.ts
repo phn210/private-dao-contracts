@@ -1,7 +1,7 @@
 // @ts-ignore
 import { pedersenHash } from "circomlibjs";
 import bigInt, { BigInteger, BigNumber } from "big-integer";
-import Utils from "./utils";
+import {Utils} from "./utils";
 import BabyJub from "./babyjub";
 
 namespace Pedersen {

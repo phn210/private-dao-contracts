@@ -100,4 +100,4 @@ namespace Utils {
     }
 }
 
-export default Utils;
+export { Utils };

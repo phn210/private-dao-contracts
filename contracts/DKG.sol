@@ -10,7 +10,7 @@ import "./libs/Math.sol";
 
 contract DKG is IDKG {
     address public owner;
-    uint256 distributedKeyCounter;
+    uint256 public distributedKeyCounter;
 
     mapping(uint256 => DistributedKey) public distributedKeys;
     mapping(bytes32 => TallyTracker) public tallyTrackers; // rename
@@ -36,22 +36,31 @@ contract DKG is IDKG {
     }
 
     modifier onlyFounder() override {
-        require(IFundManager(owner).isFounder(msg.sender));
+        require(
+            IFundManager(owner).isFounder(msg.sender),
+            "dkgContract: msg.sender is not Founder"
+        );
         _;
     }
 
     modifier onlyOwner() override {
-        require(msg.sender == owner);
+        require(msg.sender == owner, "dkgContract: msg.sender is not Owner");
         _;
     }
 
     modifier onlyCommittee() override {
-        require(IFundManager(owner).isCommittee(msg.sender));
+        require(
+            IFundManager(owner).isCommittee(msg.sender),
+            "dkgContract: msg.sender is not Committee"
+        );
         _;
     }
 
     modifier onlyWhitelistedDAO() override {
-        require(IFundManager(owner).isWhitelistedDAO(msg.sender));
+        require(
+            IFundManager(owner).isWhitelistedDAO(msg.sender),
+            "dkgContract: msg.sender is not whitelisted DAO"
+        );
         _;
     }
 
@@ -74,7 +83,7 @@ contract DKG is IDKG {
         } else if (_distributedKeyType == DistributedKeyType.VOTING) {
             require(
                 address(votingVerifiers[_dimension]) != address(0),
-                "DKG Contract: No funding verifier exists with corresponding dimensionality"
+                "DKG Contract: No voting verifier exists with corresponding dimensionality"
             );
             verifier = address(votingVerifiers[_dimension]);
         }
@@ -98,11 +107,13 @@ contract DKG is IDKG {
         (uint8 t, ) = IFundManager(owner).getDKGParams();
         require(
             getDistributedKeyState(_distributedKeyID) ==
-                DistributedKeyState.CONTRIBUTION_ROUND_1
+                DistributedKeyState.CONTRIBUTION_ROUND_1,
+            "dkgContract: key's state is not CONTRIBUTION_ROUND_1"
         );
         require(
             _round1Contribution.x.length == _round1Contribution.y.length &&
-                _round1Contribution.x.length == t
+                _round1Contribution.x.length == t,
+            "dkgContract: invalid input length"
         );
 
         for (uint i; i < t; i++) {
@@ -114,6 +125,7 @@ contract DKG is IDKG {
             );
         }
 
+        distributedKey.round1Counter += 1;
         distributedKey.round1DataSubmissions.push(
             Round1DataSubmission(
                 msg.sender,
@@ -130,8 +142,6 @@ contract DKG is IDKG {
                 _round1Contribution.y[0]
             );
 
-        distributedKey.round1Counter += 1;
-
         emit Round1DataSubmitted(msg.sender);
         return distributedKey.round1Counter;
     }
@@ -146,14 +156,19 @@ contract DKG is IDKG {
         (uint8 t, uint8 n) = IFundManager(owner).getDKGParams();
         require(
             getDistributedKeyState(_distributedKeyID) ==
-                DistributedKeyState.CONTRIBUTION_ROUND_2
+                DistributedKeyState.CONTRIBUTION_ROUND_2,
+            "dkgContract: key's state is not CONTRIBUTION_ROUND_2"
         );
-        require(_round2Contribution.recipientIndexes.length == n - 1);
-        require(_round2Contribution.ciphers.length == n);
+        require(
+            _round2Contribution.recipientIndexes.length == n - 1 &&
+                _round2Contribution.ciphers.length == n - 1,
+            "dkgContract: invalid input length"
+        );
         require(
             distributedKey
-                .round1DataSubmissions[_round2Contribution.senderIndex]
-                .sender == msg.sender
+                .round1DataSubmissions[_round2Contribution.senderIndex - 1]
+                .sender == msg.sender,
+            "dkgContract: invalid sender"
         );
 
         bytes32 bitChecker;
@@ -168,12 +183,12 @@ contract DKG is IDKG {
             bitChecker =
                 bitChecker |
                 bytes32(1 << _round2Contribution.recipientIndexes[i]);
-            bitMask = bitMask | bytes32(1 << i);
+            bitMask = bitMask | bytes32(1 << (i + 1));
         }
-        require(bitChecker == bitMask);
+        require(bitChecker == bitMask, "dkgContract: invalid recipientIndexes");
 
         uint256[] memory publicInputs = new uint256[](
-            IVerifier(distributedKey.verifier).getPublicInputsLength()
+            IVerifier(round2Verifier).getPublicInputsLength()
         );
         Round1DataSubmission memory senderSubmission = distributedKey
             .round1DataSubmissions[_round2Contribution.senderIndex - 1];
@@ -202,7 +217,8 @@ contract DKG is IDKG {
                     round2Verifier,
                     _round2Contribution.proofs[i],
                     publicInputs
-                )
+                ),
+                "dkgContract: invalid proof"
             );
 
             distributedKey
@@ -383,14 +399,29 @@ contract DKG is IDKG {
         return distributedKeys[_distributedKeyID].keyType;
     }
 
-    function getRound1DataSubmission(
-        uint256 _distributedKeyID,
-        uint8 _senderIndex
-    ) external view override returns (Round1DataSubmission memory) {
-        return
-            distributedKeys[_distributedKeyID].round1DataSubmissions[
-                _senderIndex - 1
-            ];
+    function getCommitteeIndex(
+        address _committeeAddress,
+        uint256 _distributedKeyID
+    ) external view override returns (uint8) {
+        require(
+            getDistributedKeyState(_distributedKeyID) >
+                DistributedKeyState.CONTRIBUTION_ROUND_1,
+            "dkgContract: not done CONTRIBUTION_ROUND_1"
+        );
+        Round1DataSubmission[] memory round1DataSubmissions = distributedKeys[
+            _distributedKeyID
+        ].round1DataSubmissions;
+        for (uint8 i = 0; i < round1DataSubmissions.length; i++) {
+            if (round1DataSubmissions[i].sender == _committeeAddress)
+                return i + 1;
+        }
+        revert("dkgContract: invalid _committeeAddress");
+    }
+
+    function getRound1DataSubmissions(
+        uint256 _distributedKeyID
+    ) external view override returns (Round1DataSubmission[] memory) {
+        return distributedKeys[_distributedKeyID].round1DataSubmissions;
     }
 
     function getPublicKey(

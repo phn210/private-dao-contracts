@@ -3,7 +3,7 @@ import { babyJub } from "circomlibjs";
 import bigInt, { BigInteger, BigNumber } from "big-integer";
 import { randomBytes } from "crypto";
 import BabyJub from "./babyjub";
-import Utils from "./utils";
+import { Utils } from "./utils";
 import Pedersen from "./pedersen-hash";
 import { Element } from "fixed-merkle-tree";
 
@@ -64,7 +64,7 @@ namespace Committee {
         return result;
     }
 
-    export function getRound2Contribute(
+    export function getRound2Contribution(
         receiverIndex: number,
         receiverPublicKey: Array<BigInt>,
         C: Array<BigInt[]>,
@@ -248,7 +248,7 @@ namespace Committee {
         return result;
     }
 
-    export function getTallyContribute(
+    export function getTallyContribution(
         privateKey: BigInt,
         u: Array<BigInt[]>,
         c: Array<BigInt>,
@@ -406,18 +406,20 @@ namespace Voter {
                 pathElements: pathElements,
                 pathIndices: pathIndices,
                 pathRoot: pathRoot,
-                nullifierHash: Utils.getBigInt(Pedersen.hash(
-                    Buffer.concat([
-                        Utils.bigIntegerToBuffer(
-                            Utils.getBigInteger(nullifier),
-                            32
-                        ),
-                        Utils.bigIntegerToBuffer(
-                            Utils.getBigInteger(idProposal),
-                            32
-                        ),
-                    ])
-                )),
+                nullifierHash: Utils.getBigInt(
+                    Pedersen.hash(
+                        Buffer.concat([
+                            Utils.bigIntegerToBuffer(
+                                Utils.getBigInteger(nullifier),
+                                32
+                            ),
+                            Utils.bigIntegerToBuffer(
+                                Utils.getBigInteger(idProposal),
+                                32
+                            ),
+                        ])
+                    )
+                ),
                 R: new Array<BigInt[]>(),
                 M: new Array<BigInt[]>(),
                 r: new Array<BigInt>(),

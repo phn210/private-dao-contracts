@@ -11,7 +11,8 @@ namespace Tree {
     export function getPoseidonHashTree(): MerkleTree {
         const tree: MerkleTree = new MerkleTree(12, [], {
             hashFunction: Poseidon.hashLeftRight,
-            zeroElement: 0,
+            zeroElement:
+                "1117582952394327218264374806630104116016694857615943107127336590235748983513",
         });
         return tree;
     }

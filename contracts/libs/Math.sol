@@ -12,7 +12,7 @@ library Math {
     function computeLagrangeCoefficient(
         uint8[] memory _listIndex,
         uint8 _threshold
-    ) public pure returns (uint256[] memory) {
+    ) internal pure returns (uint256[] memory) {
         // require(_listIndex.length == threshold, "DKG contract: invalid input");
         uint256[] memory lagrangeCoefficient = new uint256[](_threshold);
         for (uint8 indexI; indexI < _threshold; indexI++) {
@@ -50,7 +50,7 @@ library Math {
         return lagrangeCoefficient;
     }
 
-    function inverse(uint256 val) public pure returns (uint256 invVal) {
+    function inverse(uint256 val) internal pure returns (uint256 invVal) {
         uint256 t = 0;
         uint256 newT = 1;
         uint256 r = CurveBabyJubJub.JUB_SUBORDER;

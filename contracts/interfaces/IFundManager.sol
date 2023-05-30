@@ -24,7 +24,6 @@ interface IFundManager {
     }
 
     struct FundingRoundConfig {
-        uint256 fundingRoundInterval;
         uint256 pendingPeriod;
         uint256 activePeriod;
         uint256 tallyPeriod;

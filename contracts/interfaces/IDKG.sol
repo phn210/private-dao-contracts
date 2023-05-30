@@ -211,10 +211,14 @@ interface IDKG {
         uint256 _distributedKeyID
     ) external view returns (DistributedKeyType);
 
-    function getRound1DataSubmission(
-        uint256 _distributedKeyID,
-        uint8 _senderIndex
-    ) external view returns (Round1DataSubmission memory);
+    function getCommitteeIndex(
+        address _committeeAddress,
+        uint256 _distributedKeyID
+    ) external view returns (uint8);
+
+    function getRound1DataSubmissions(
+        uint256 _distributedKeyID
+    ) external view returns (Round1DataSubmission[] memory);
 
     function getPublicKey(
         uint256 _distributedKeyID
