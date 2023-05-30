@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 interface IVerifier {
-    function getPublicInputsLength() external view returns (uint256);
+    function getPublicInputsLength() external pure returns (uint256);
 
     function verifyProof(
         uint[2] memory _a,
