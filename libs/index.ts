@@ -250,9 +250,9 @@ namespace Committee {
 
     export function getTallyContribution(
         privateKey: BigInt,
+        f: BigInt,
         u: Array<BigInt[]>,
         c: Array<BigInt>,
-        f: BigInt,
         R: Array<BigInt[]>
     ) {
         let decryptedF = new Array<BigInt>();
@@ -480,6 +480,7 @@ namespace Voter {
             ri: new Array<BigInt>(),
             Ri: new Array<BigInt[]>(),
             Mi: new Array<BigInt[]>(),
+            commitment: Utils.getBigInt(bigInt(0)),
             circuitInput: {
                 publicKey: publicKey,
                 idDAO: idDAO,
@@ -535,6 +536,7 @@ namespace Voter {
                 Utils.bigIntegerToBuffer(Utils.getBigInteger(votingPower), 32),
             ])
         ).mod(BabyJub.primeR);
+        result.commitment = Utils.getBigInt(commitment);
         result.circuitInput.commitment = Utils.getBigInt(commitment);
         result.circuitInput.R = result.Ri;
         result.circuitInput.M = result.Mi;

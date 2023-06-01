@@ -10,7 +10,7 @@ const { VoterData, CommitteeData } = require("./data");
 var t = 3;
 var n = 5;
 var votersLength = VoterData.data1.votingPower.length;
-describe("Test FundManager", () => {
+describe("Test Funding Flow", () => {
     before(async () => {
         let accounts = await ethers.getSigners();
         this.founder = accounts[0];
@@ -74,8 +74,8 @@ describe("Test FundManager", () => {
         this.poseidon = await Poseidon.deploy(poseidonUnit2.address);
         await this.poseidon.deployed();
 
-        let merkleTreeConfig = [32, this.poseidon.address];
-        let fundingRoundConfig = [10, 10, 10];
+        let merkleTreeConfig = [20, this.poseidon.address];
+        let fundingRoundConfig = [50, 50, 50];
         let dkgConfig = [
             this.round2ContributionVerifier.address,
             this.fundingVerifierDim3.address,
@@ -99,184 +99,415 @@ describe("Test FundManager", () => {
             "DKG",
             await this.fundManager.dkgContract()
         );
+        for (let i = 0; i < this.daos.length; i++) {
+            await this.fundManager.addWhitelistedDAO(this.daos[i].address);
+        }
     });
-    it("Generate Funding Distributed Key", async () => {
-        // Generate key
-        await this.dkgContract.generateDistributedKey(3, 0);
-        expect(await this.dkgContract.distributedKeyCounter()).to.be.equal(1);
-        let keyID = 0;
-        expect(
-            await this.dkgContract.getDistributedKeyState(keyID)
-        ).to.be.equal(0);
+    describe("Test DKG", (async) => {
+        it("Generate Funding Distributed Key", async () => {
+            // Generate key
+            let keyID = await this.dkgContract.distributedKeyCounter();
+            await this.dkgContract.generateDistributedKey(3, 0);
+            expect(await this.dkgContract.distributedKeyCounter()).to.be.equal(
+                Number(keyID) + 1
+            );
 
-        // Submit round 1
-        for (let i = 0; i < this.committees.length; i++) {
-            let x = [];
-            let y = [];
-            for (let j = 0; j < t; j++) {
-                x.push(CommitteeData.data1[i].C[j][0]);
-                y.push(CommitteeData.data1[i].C[j][1]);
+            expect(
+                await this.dkgContract.getDistributedKeyState(keyID)
+            ).to.be.equal(0);
+
+            // Submit round 1
+            for (let i = 0; i < this.committees.length; i++) {
+                let x = [];
+                let y = [];
+                for (let j = 0; j < t; j++) {
+                    x.push(CommitteeData.data1[i].C[j][0]);
+                    y.push(CommitteeData.data1[i].C[j][1]);
+                }
+                await this.dkgContract
+                    .connect(this.committees[i])
+                    .submitRound1Contribution(keyID, [x, y]);
             }
-            await this.dkgContract
-                .connect(this.committees[i])
-                .submitRound1Contribution(keyID, [x, y]);
-        }
-        expect(
-            await this.dkgContract.getDistributedKeyState(keyID)
-        ).to.be.equal(1);
+            expect(
+                await this.dkgContract.getDistributedKeyState(keyID)
+            ).to.be.equal(1);
 
-        // Submit round 2
-        let listCommitteeIndex = [];
-        for (let i = 0; i < this.committees.length; i++) {
-            listCommitteeIndex.push(i + 1);
-        }
-        let round1DataSubmissions =
-            await this.dkgContract.getRound1DataSubmissions(keyID);
-        for (let i = 0; i < this.committees.length; i++) {
-            let senderIndex = await this.dkgContract.getCommitteeIndex(
-                this.committees[i].address,
+            // Submit round 2
+            let listCommitteeIndex = [];
+            for (let i = 0; i < this.committees.length; i++) {
+                listCommitteeIndex.push(i + 1);
+            }
+            let round1DataSubmissions =
+                await this.dkgContract.getRound1DataSubmissions(keyID);
+            for (let i = 0; i < this.committees.length; i++) {
+                let senderIndex = await this.dkgContract.getCommitteeIndex(
+                    this.committees[i].address,
+                    keyID
+                );
+                let recipientIndexes = [];
+                let ciphers = [];
+                let proofs = [];
+
+                for (let j = 0; j < round1DataSubmissions.length; j++) {
+                    let round1DataSubmission = round1DataSubmissions[j];
+                    let recipientIndex = round1DataSubmission.senderIndex;
+                    if (recipientIndex != senderIndex) {
+                        recipientIndexes.push(recipientIndex);
+                        let recipientPublicKeyX = BigInt(
+                            round1DataSubmission.x[0]
+                        );
+                        let recipientPublicKeyY = BigInt(
+                            round1DataSubmission.y[0]
+                        );
+                        let round2Contribution =
+                            Committee.getRound2Contribution(
+                                recipientIndex,
+                                [recipientPublicKeyX, recipientPublicKeyY],
+                                CommitteeData.data1[i].C,
+                                CommitteeData.data1[i].f[recipientIndex]
+                            );
+                        ciphers.push([
+                            round2Contribution.share.u[0],
+                            round2Contribution.share.u[1],
+                            round2Contribution.share.c,
+                        ]);
+                        let { proof, publicSignals } =
+                            await snarkjs.groth16.fullProve(
+                                round2Contribution.circuitInput,
+                                __dirname +
+                                    "/../zk-resources/wasm/round-2-contribution.wasm",
+                                __dirname +
+                                    "/../zk-resources/zkey/round-2-contribution_final.zkey"
+                            );
+                        proof = Utils.genSolidityProof(
+                            proof.pi_a,
+                            proof.pi_b,
+                            proof.pi_c
+                        );
+                        proofs.push(proof);
+                    }
+                }
+                await this.dkgContract
+                    .connect(this.committees[i])
+                    .submitRound2Contribution(keyID, [
+                        senderIndex,
+                        recipientIndexes,
+                        ciphers,
+                        proofs,
+                    ]);
+            }
+            expect(
+                await this.dkgContract.getDistributedKeyState(keyID)
+            ).to.be.equal(2);
+
+            // for (let i = 1; i <= n; i++) {
+            //     console.log(
+            //         await this.dkgContract.getRound2DataSubmissions(keyID, i)
+            //     );
+            // }
+        });
+
+        //     it("Generate Voting Distributed Key", async () => {
+        //         // Generate key
+        //         let keyID = await this.dkgContract.distributedKeyCounter();
+        //         await this.dkgContract.generateDistributedKey(3, 0);
+        //         expect(await this.dkgContract.distributedKeyCounter()).to.be.equal(
+        //             Number(keyID) + 1
+        //         );
+        //         expect(
+        //             await this.dkgContract.getDistributedKeyState(keyID)
+        //         ).to.be.equal(0);
+
+        //         // Submit round 1
+        //         for (let i = 0; i < this.committees.length; i++) {
+        //             let x = [];
+        //             let y = [];
+        //             for (let j = 0; j < t; j++) {
+        //                 x.push(CommitteeData.data1[i].C[j][0]);
+        //                 y.push(CommitteeData.data1[i].C[j][1]);
+        //             }
+        //             await this.dkgContract
+        //                 .connect(this.committees[i])
+        //                 .submitRound1Contribution(keyID, [x, y]);
+        //         }
+        //         expect(
+        //             await this.dkgContract.getDistributedKeyState(keyID)
+        //         ).to.be.equal(1);
+
+        //         // Submit round 2
+        //         let listCommitteeIndex = [];
+        //         for (let i = 0; i < this.committees.length; i++) {
+        //             listCommitteeIndex.push(i + 1);
+        //         }
+        //         let round1DataSubmissions =
+        //             await this.dkgContract.getRound1DataSubmissions(keyID);
+        //         for (let i = 0; i < this.committees.length; i++) {
+        //             let senderIndex = await this.dkgContract.getCommitteeIndex(
+        //                 this.committees[i].address,
+        //                 keyID
+        //             );
+        //             let recipientIndexes = [];
+        //             let ciphers = [];
+        //             let proofs = [];
+
+        //             for (let j = 0; j < round1DataSubmissions.length; j++) {
+        //                 let round1DataSubmission = round1DataSubmissions[j];
+        //                 let recipientIndex = round1DataSubmission.senderIndex;
+        //                 if (recipientIndex != senderIndex) {
+        //                     recipientIndexes.push(recipientIndex);
+        //                     let recipientPublicKeyX = BigInt(
+        //                         round1DataSubmission.x[0]
+        //                     );
+        //                     let recipientPublicKeyY = BigInt(
+        //                         round1DataSubmission.y[0]
+        //                     );
+        //                     let round2Contribution =
+        //                         Committee.getRound2Contribution(
+        //                             recipientIndex,
+        //                             [recipientPublicKeyX, recipientPublicKeyY],
+        //                             CommitteeData.data1[i].C,
+        //                             CommitteeData.data1[i].f[recipientIndex]
+        //                         );
+        //                     ciphers.push([
+        //                         round2Contribution.share.u[0],
+        //                         round2Contribution.share.u[1],
+        //                         round2Contribution.share.c,
+        //                     ]);
+        //                     let { proof, publicSignals } =
+        //                         await snarkjs.groth16.fullProve(
+        //                             round2Contribution.circuitInput,
+        //                             __dirname +
+        //                                 "/../zk-resources/wasm/round-2-contribution.wasm",
+        //                             __dirname +
+        //                                 "/../zk-resources/zkey/round-2-contribution_final.zkey"
+        //                         );
+        //                     proof = Utils.genSolidityProof(
+        //                         proof.pi_a,
+        //                         proof.pi_b,
+        //                         proof.pi_c
+        //                     );
+        //                     proofs.push(proof);
+        //                 }
+        //             }
+        //             await this.dkgContract
+        //                 .connect(this.committees[i])
+        //                 .submitRound2Contribution(keyID, [
+        //                     senderIndex,
+        //                     recipientIndexes,
+        //                     ciphers,
+        //                     proofs,
+        //                 ]);
+        //         }
+        //         expect(
+        //             await this.dkgContract.getDistributedKeyState(keyID)
+        //         ).to.be.equal(2);
+        //     });
+    });
+    describe("Test FundManager", async () => {
+        it("Success Flow", async () => {
+            let keyID = 0; // Funding key
+            for (let i = 0; i < this.daos.length; i++) {
+                await this.fundManager.connect(this.daos[i]).applyForFunding();
+            }
+            expect(
+                await this.fundManager.getFundingRoundQueueLength()
+            ).to.be.equal(this.daos.length);
+
+            await this.fundManager.launchFundingRound(keyID);
+            expect(await this.fundManager.fundingRoundInProgress()).to.be.true;
+            let fundingRoundID = 0;
+
+            // Mine block to Active phase
+            expect(
+                await this.fundManager.getFundingRoundState(fundingRoundID)
+            ).to.be.equal(0);
+            await mineBlocks(51);
+            expect(
+                await this.fundManager.getFundingRoundState(fundingRoundID)
+            ).to.be.equal(1);
+            // let publicKeyX, publicKeyY;
+            let [publicKeyX, publicKeyY] = await this.dkgContract.getPublicKey(
                 keyID
             );
-            let recipientIndexes = [];
-            let ciphers = [];
-            let proofs = [];
+            publicKeyX = BigInt(publicKeyX);
+            publicKeyY = BigInt(publicKeyY);
 
-            for (let j = 0; j < round1DataSubmissions.length; j++) {
-                let round1DataSubmission = round1DataSubmissions[j];
-                let recipientIndex = round1DataSubmission.senderIndex;
-                if (recipientIndex != senderIndex) {
-                    recipientIndexes.push(recipientIndex);
-                    let recipientPublicKeyX = BigInt(round1DataSubmission.x[0]);
-                    let recipientPublicKeyY = BigInt(round1DataSubmission.y[0]);
-                    let round2Contribution = Committee.getRound2Contribution(
-                        recipientIndex,
-                        [recipientPublicKeyX, recipientPublicKeyY],
-                        CommitteeData.data1[i].C,
-                        CommitteeData.data1[i].f[recipientIndex]
-                    );
-                    ciphers.push([
-                        round2Contribution.share.u[0],
-                        round2Contribution.share.u[1],
-                        round2Contribution.share.c,
-                    ]);
-                    let { proof, publicSignals } =
-                        await snarkjs.groth16.fullProve(
-                            round2Contribution.circuitInput,
-                            __dirname +
-                                "/../zk-resources/wasm/round-2-contribution.wasm",
-                            __dirname +
-                                "/../zk-resources/zkey/round-2-contribution_final.zkey"
-                        );
-                    proof = Utils.genSolidityProof(
-                        proof.pi_a,
-                        proof.pi_b,
-                        proof.pi_c
-                    );
-                    proofs.push(proof);
-                }
+            let tmp = await this.fundManager.getListDAO(fundingRoundID);
+            let listDAO = [];
+            for (let i = 0; i < tmp.length; i++) {
+                listDAO.push(BigInt(tmp[i]));
             }
-            await this.dkgContract
-                .connect(this.committees[i])
-                .submitRound2Contribution(keyID, [
-                    senderIndex,
-                    recipientIndexes,
-                    ciphers,
-                    proofs,
-                ]);
-        }
-        expect(
-            await this.dkgContract.getDistributedKeyState(keyID)
-        ).to.be.equal(2);
-    });
-    it("Generate Voting Distributed Key", async () => {
-        // Generate key
-        await this.dkgContract.generateDistributedKey(3, 1);
-        expect(await this.dkgContract.distributedKeyCounter()).to.be.equal(2);
-        let keyID = 1;
-        expect(
-            await this.dkgContract.getDistributedKeyState(keyID)
-        ).to.be.equal(0);
-
-        // Submit round 1
-        for (let i = 0; i < this.committees.length; i++) {
-            let x = [];
-            let y = [];
-            for (let j = 0; j < t; j++) {
-                x.push(CommitteeData.data1[i].C[j][0]);
-                y.push(CommitteeData.data1[i].C[j][1]);
+            for (let i = 0; i < this.voters.length; i++) {
+                let fund = Voter.getFund(
+                    [publicKeyX, publicKeyY],
+                    listDAO,
+                    VoterData.data1.votingPower[i],
+                    VoterData.data1.fundingVector[i]
+                );
+                // console.log(fund);
+                let { proof, publicSignals } = await snarkjs.groth16.fullProve(
+                    fund.circuitInput,
+                    __dirname + "/../zk-resources/wasm/fund_dim3.wasm",
+                    __dirname + "/../zk-resources/zkey/fund_dim3_final.zkey"
+                );
+                proof = Utils.genSolidityProof(
+                    proof.pi_a,
+                    proof.pi_b,
+                    proof.pi_c
+                );
+                await this.fundManager
+                    .connect(this.voters[i])
+                    .fund(
+                        fundingRoundID,
+                        fund.commitment,
+                        fund.Ri,
+                        fund.Mi,
+                        proof,
+                        { value: VoterData.data1.votingPower[i] }
+                    );
             }
-            await this.dkgContract
-                .connect(this.committees[i])
-                .submitRound1Contribution(keyID, [x, y]);
-        }
-        expect(
-            await this.dkgContract.getDistributedKeyState(keyID)
-        ).to.be.equal(1);
 
-        // Submit round 2
-        let listCommitteeIndex = [];
-        for (let i = 0; i < this.committees.length; i++) {
-            listCommitteeIndex.push(i + 1);
-        }
-        let round1DataSubmissions =
-            await this.dkgContract.getRound1DataSubmissions(keyID);
-        for (let i = 0; i < this.committees.length; i++) {
-            let senderIndex = await this.dkgContract.getCommitteeIndex(
-                this.committees[i].address,
-                keyID
+            await mineBlocks(51);
+            expect(
+                await this.fundManager.getFundingRoundState(fundingRoundID)
+            ).to.be.equal(2);
+            await this.fundManager.startTallying(fundingRoundID);
+
+            let requestID = await this.fundManager.getRequestID(
+                keyID,
+                this.fundManager.address,
+                fundingRoundID
             );
-            let recipientIndexes = [];
-            let ciphers = [];
-            let proofs = [];
+            tmp = await this.fundManager.getR(requestID);
+            let R = [];
+            for (let i = 0; i < tmp.length; i++) {
+                R.push([BigInt(tmp[i][0]), BigInt(tmp[i][1])]);
+            }
 
-            for (let j = 0; j < round1DataSubmissions.length; j++) {
-                let round1DataSubmission = round1DataSubmissions[j];
-                let recipientIndex = round1DataSubmission.senderIndex;
-                if (recipientIndex != senderIndex) {
-                    recipientIndexes.push(recipientIndex);
-                    let recipientPublicKeyX = BigInt(round1DataSubmission.x[0]);
-                    let recipientPublicKeyY = BigInt(round1DataSubmission.y[0]);
-                    let round2Contribution = Committee.getRound2Contribution(
-                        recipientIndex,
-                        [recipientPublicKeyX, recipientPublicKeyY],
-                        CommitteeData.data1[i].C,
-                        CommitteeData.data1[i].f[recipientIndex]
+            for (let i = 0; i < t; i++) {
+                let recipientIndex = i + 1;
+                let round2DataSubmissions =
+                    await this.dkgContract.getRound2DataSubmissions(
+                        keyID,
+                        recipientIndex
                     );
-                    ciphers.push([
-                        round2Contribution.share.u[0],
-                        round2Contribution.share.u[1],
-                        round2Contribution.share.c,
+
+                // console.log(recipientIndex, round2DataSubmissions);
+                let senderIndexes = [];
+                let u = [];
+                let c = [];
+                for (let j = 0; j < round2DataSubmissions.length; j++) {
+                    senderIndexes.push(round2DataSubmissions[j].senderIndex);
+                    u.push([
+                        BigInt(round2DataSubmissions[j].ciphers[0]),
+                        BigInt(round2DataSubmissions[j].ciphers[1]),
                     ]);
-                    let { proof, publicSignals } =
-                        await snarkjs.groth16.fullProve(
-                            round2Contribution.circuitInput,
-                            __dirname +
-                                "/../zk-resources/wasm/round-2-contribution.wasm",
-                            __dirname +
-                                "/../zk-resources/zkey/round-2-contribution_final.zkey"
-                        );
-                    proof = Utils.genSolidityProof(
-                        proof.pi_a,
-                        proof.pi_b,
-                        proof.pi_c
-                    );
-                    proofs.push(proof);
+                    c.push(BigInt(round2DataSubmissions[j].ciphers[2]));
+                }
+
+                let tallyContribution = Committee.getTallyContribution(
+                    CommitteeData.data1[i].a0,
+                    CommitteeData.data1[i].secret["f(i)"],
+                    u,
+                    c,
+                    R
+                );
+                // console.log(tallyContribution);
+                let { proof, publicSignals } = await snarkjs.groth16.fullProve(
+                    tallyContribution.circuitInput,
+                    __dirname +
+                        "/../zk-resources/wasm/tally-contribution_dim3.wasm",
+                    __dirname +
+                        "/../zk-resources/zkey/tally-contribution_dim3_final.zkey"
+                );
+                proof = Utils.genSolidityProof(
+                    proof.pi_a,
+                    proof.pi_b,
+                    proof.pi_c
+                );
+                // console.log(proof);
+                await this.dkgContract
+                    .connect(this.committees[i])
+                    .submitTallyContribution(requestID, [
+                        recipientIndex,
+                        tallyContribution.D,
+                        proof,
+                    ]);
+            }
+
+            tmp = await this.dkgContract.getResultVector(requestID);
+            let resultVector = [];
+            for (let i = 0; i < tmp.length; i++) {
+                resultVector.push([BigInt(tmp[i][0]), BigInt(tmp[i][1])]);
+            }
+
+            // Should brute-force resultVector to get result
+            let result = [0n, 0n, 0n];
+            for (let i = 0; i < VoterData.data1.fundingVector.length; i++) {
+                let fundingVector = VoterData.data1.fundingVector[i];
+                for (let j = 0; j < fundingVector.length; j++) {
+                    result[j] +=
+                        VoterData.data1.votingPower[i] *
+                        BigInt(fundingVector[j]);
                 }
             }
-            await this.dkgContract
-                .connect(this.committees[i])
-                .submitRound2Contribution(keyID, [
-                    senderIndex,
-                    recipientIndexes,
-                    ciphers,
-                    proofs,
-                ]);
-        }
-        expect(
-            await this.dkgContract.getDistributedKeyState(keyID)
-        ).to.be.equal(2);
-        this.round2ContributionVerifier.
+            // console.log(resultVector);
+            // console.log(result);
+            let { proof, publicSignals } = await snarkjs.groth16.fullProve(
+                { resultVector: resultVector, result: result },
+                __dirname + "/../zk-resources/wasm/result-verifier_dim3.wasm",
+                __dirname +
+                    "/../zk-resources/zkey/result-verifier_dim3_final.zkey"
+            );
+            proof = Utils.genSolidityProof(proof.pi_a, proof.pi_b, proof.pi_c);
+            // console.log(proof);
+            await this.dkgContract.submitTallyResult(requestID, result, proof);
+            expect(
+                await this.fundManager.getFundingRoundState(fundingRoundID)
+            ).to.be.equal(3);
+
+            await this.fundManager.finalizeFundingRound(fundingRoundID);
+            expect(
+                await this.fundManager.getFundingRoundState(fundingRoundID)
+            ).to.be.equal(4);
+
+            // Withdraw fund to DAO
+            for (let i = 0; i < result.length; i++) {
+                let balanceBefore = await ethers.provider.getBalance(
+                    this.daos[i].address
+                );
+                await this.fundManager.withdrawFund(
+                    fundingRoundID,
+                    this.daos[i].address
+                );
+                let balanceAfter = await ethers.provider.getBalance(
+                    this.daos[i].address
+                );
+                expect(BigInt(balanceBefore) + result[i]).to.be.equal(
+                    BigInt(balanceAfter)
+                );
+            }
+        });
     });
-
-
 });
+
+async function bn() {
+    let _bn = await ethers.provider.getBlockNumber();
+    // console.log("\x1b[33m%s\x1b[0m", "Block =", _bn.toString());
+    return _bn;
+}
+
+async function moveTimestamp(seconds) {
+    // console.log(`Skipping ${seconds} seconds...`);
+    // console.log("Timestamp before:", await ts());
+    await ethers.provider.send("evm_increaseTime", [seconds]);
+    await ethers.provider.send("evm_mine", []);
+    // console.log("Timestamp after:", await ts());
+}
+
+async function mineBlocks(nums) {
+    // console.log(`Skipping ${nums} blocks...`);
+    console.log("Block before:", await bn());
+    for (let i = 0; i < nums; i++) await ethers.provider.send("evm_mine", []);
+    console.log("Block after:", await bn());
+}

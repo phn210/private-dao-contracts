@@ -82,7 +82,7 @@ interface IDKG {
 
     struct Round2DataSubmission {
         uint8 senderIndex;
-        uint256[] cipher;
+        uint256[] ciphers;
     }
 
     struct Round2Contribution {
@@ -220,6 +220,11 @@ interface IDKG {
         uint256 _distributedKeyID
     ) external view returns (Round1DataSubmission[] memory);
 
+    function getRound2DataSubmissions(
+        uint256 _distributedKeyID,
+        uint8 _recipientIndex
+    ) external view returns (Round2DataSubmission[] memory);
+
     function getPublicKey(
         uint256 _distributedKeyID
     ) external view returns (uint256, uint256);
@@ -228,7 +233,7 @@ interface IDKG {
         uint256 _distributedKeyID
     ) external view returns (IVerifier);
 
-    function getTallyResultVector(
+    function getResultVector(
         bytes32 _requestID
     ) external view returns (uint256[][] memory);
 }

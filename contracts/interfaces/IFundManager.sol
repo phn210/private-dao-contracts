@@ -17,6 +17,7 @@ interface IFundManager {
         bytes32 requestID;
         address[] listDAO;
         uint256[] listCommitment;
+        uint256 balance;
         mapping(address => uint256) balances;
         mapping(address => uint256) daoBalances;
         uint256 launchedAt;
@@ -50,7 +51,10 @@ interface IFundManager {
         uint256 indexed commitment
     );
 
-    event TallyStarted(uint256 indexed fundingRoundID, bytes32 indexed requestID);
+    event TallyStarted(
+        uint256 indexed fundingRoundID,
+        bytes32 indexed requestID
+    );
 
     event TallyResultSubmitted(
         bytes32 indexed requestID,
@@ -58,7 +62,7 @@ interface IFundManager {
     );
 
     event LeafInserted(uint256 indexed commitment);
-    
+
     event FundingRoundFinalized(uint256 indexed fundingRoundID);
 
     event FundingRoundFailed(uint256 indexed fundingRoundID);
@@ -108,6 +112,8 @@ interface IFundManager {
 
     /*==================== VIEW FUNCTION ====================*/
 
+    function getFundingRoundQueueLength() external view returns (uint256);
+
     function isCommittee(address _sender) external view returns (bool);
 
     function isWhitelistedDAO(address _sender) external view returns (bool);
@@ -115,4 +121,12 @@ interface IFundManager {
     function isFounder(address _sender) external view returns (bool);
 
     function getDKGParams() external view returns (uint8, uint8);
+
+    function getListDAO(
+        uint256 _fundingRoundID
+    ) external view returns (address[] memory);
+
+    function getFundingRoundBalance(
+        uint256 _fundingRoundID
+    ) external view returns (uint256);
 }

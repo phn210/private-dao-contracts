@@ -14,7 +14,7 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
     address public founder;
     uint8 public numberOfCommittees;
     uint8 public threshold;
-    bool fundingRoundInProgress;
+    bool public fundingRoundInProgress;
     uint256 public reserveFactor;
     FundingRoundConfig public config;
     uint256 public bounty;
@@ -91,22 +91,24 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
 
     function launchFundingRound(
         uint256 _distributedKeyID
-    )
-        external
-        override
-        onlyWhitelistedDAO
-        returns (uint256 fundingRoundID, bytes32 requestID)
-    {
-        require(!fundingRoundInProgress);
+    ) external override returns (uint256 fundingRoundID, bytes32 requestID) {
+        require(
+            !fundingRoundInProgress,
+            "FundManager: is having a funding round in progress"
+        );
         require(
             dkgContract.getDistributedKeyState(_distributedKeyID) ==
                 IDKG.DistributedKeyState.ACTIVE &&
                 dkgContract.getType(_distributedKeyID) ==
                 IDKG.DistributedKeyType.FUNDING &&
-                dkgContract.getUsageCounter(_distributedKeyID) == 0
+                dkgContract.getUsageCounter(_distributedKeyID) == 0,
+            "FundManager: Invalid key"
         );
         uint8 dimension = dkgContract.getDimension(_distributedKeyID);
-        require(fundingRoundQueue.getLength() >= dimension);
+        require(
+            fundingRoundQueue.getLength() >= dimension,
+            "FundManager: The dimension of the key does not satisfy the number of DAOs"
+        );
         address[] memory listDAO = new address[](dimension);
         for (uint8 i = 0; i < listDAO.length; i++) {
             listDAO[i] = fundingRoundQueue.dequeue();
@@ -124,10 +126,8 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
         Request storage request = requests[requestID];
         request.distributedKeyID = _distributedKeyID;
         for (uint8 i; i < dimension; i++) {
-            request.R[i][0] = 0;
-            request.R[i][1] = 1;
-            request.M[i][0] = 0;
-            request.M[i][1] = 1;
+            request.R.push([0, 1]);
+            request.M.push([0, 1]);
         }
 
         fundingRound.requestID = requestID;
@@ -148,11 +148,15 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
     ) external payable override {
         FundingRound storage fundingRound = fundingRounds[_fundingRoundID];
         require(
-            getFundingRoundState(_fundingRoundID) == FundingRoundState.ACTIVE
+            getFundingRoundState(_fundingRoundID) == FundingRoundState.ACTIVE,
+            "FundManager: FundingRound is not active"
         );
         Request storage request = requests[fundingRound.requestID];
         uint8 dimension = dkgContract.getDimension(request.distributedKeyID);
-        require(_R.length == dimension && _M.length == dimension);
+        require(
+            _R.length == dimension && _M.length == dimension,
+            "FundManager: invalid input length"
+        );
         IVerifier verifier = dkgContract.getVerifier(request.distributedKeyID);
         uint256[] memory publicInputs = new uint256[](
             verifier.getPublicInputsLength()
@@ -187,6 +191,7 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
         }
 
         fundingRound.listCommitment.push(_commitment);
+        fundingRound.balance += msg.value;
         fundingRound.balances[msg.sender] += msg.value;
 
         emit Funded(_fundingRoundID, msg.sender, msg.value, _commitment);
@@ -284,6 +289,15 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
 
     /*==================== VIEW FUNCTION ====================*/
 
+    function getFundingRoundQueueLength()
+        external
+        view
+        override
+        returns (uint256)
+    {
+        return fundingRoundQueue.getLength();
+    }
+
     // FIXME use a funding round counter instead of timestamp for determinism
     function getRequestID(
         uint256 _distributedKeyID,
@@ -300,6 +314,18 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
 
     function getDKGParams() external view override returns (uint8, uint8) {
         return (threshold, numberOfCommittees);
+    }
+
+    function getListDAO(
+        uint256 _fundingRoundID
+    ) external view override returns (address[] memory) {
+        return fundingRounds[_fundingRoundID].listDAO;
+    }
+
+    function getFundingRoundBalance(
+        uint256 _fundingRoundID
+    ) external view override returns (uint256) {
+        return fundingRounds[_fundingRoundID].balance;
     }
 
     function getRequest(
@@ -334,6 +360,9 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
         uint256 endPending = fundingRound.launchedAt + config.pendingPeriod;
         uint256 endActive = endPending + config.activePeriod;
         uint256 endTallying = endActive + config.tallyPeriod;
+        if (fundingRound.finalizedAt != 0) {
+            return FundingRoundState.FINALIZED;
+        }
         if (block.number <= endPending) {
             return FundingRoundState.PENDING;
         }
@@ -348,9 +377,6 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
         }
         if (endActive < block.number && block.number <= endTallying) {
             return FundingRoundState.TALLYING;
-        }
-        if (fundingRound.finalizedAt != 0) {
-            return FundingRoundState.FINALIZED;
         }
         return FundingRoundState.FAILED;
     }
@@ -378,7 +404,7 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
             );
     }
 
-    // FOR TEST PURPOSE
+    /*=================== FOR TEST REASON ===================*/
 
     function addWhitelistedDAO(address _dao) external onlyFounder {
         isWhitelistedDAO[_dao] = true;

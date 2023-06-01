@@ -2,22 +2,29 @@
 pragma solidity ^0.8.0;
 
 contract Queue {
+    address public owner;
     mapping(uint256 => address) data;
     uint256 first = 1;
     uint256 last = 0;
     uint256 maxLength;
 
-    constructor(uint256 _maxLength) {
-        maxLength = _maxLength;
+    modifier onlyOwner() {
+        require(msg.sender == owner);
+        _;
     }
 
-    function enqueue(address _data) public {
+    constructor(uint256 _maxLength) {
+        maxLength = _maxLength;
+        owner = msg.sender;
+    }
+
+    function enqueue(address _data) public onlyOwner {
         require(getLength() + 1 <= maxLength);
         last += 1;
         data[last] = _data;
     }
 
-    function dequeue() public returns (address _data) {
+    function dequeue() public onlyOwner returns (address _data) {
         require(last >= first); // non-empty queue
 
         _data = data[first];

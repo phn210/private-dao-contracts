@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-
+import "hardhat/console.sol";
 import "./interfaces/IDKG.sol";
 import "./interfaces/IVerifier.sol";
 import "./interfaces/IFundManager.sol";
@@ -180,6 +180,10 @@ contract DKG is IDKG {
             i < _round2Contribution.recipientIndexes.length;
             i++
         ) {
+            require(
+                _round2Contribution.ciphers[i].length == 3,
+                "dkgContract: invalid input length"
+            );
             bitChecker =
                 bitChecker |
                 bytes32(1 << _round2Contribution.recipientIndexes[i]);
@@ -193,7 +197,7 @@ contract DKG is IDKG {
         Round1DataSubmission memory senderSubmission = distributedKey
             .round1DataSubmissions[_round2Contribution.senderIndex - 1];
         for (
-            uint8 i = 1;
+            uint8 i = 0;
             i < _round2Contribution.recipientIndexes.length;
             i++
         ) {
@@ -220,7 +224,6 @@ contract DKG is IDKG {
                 ),
                 "dkgContract: invalid proof"
             );
-
             distributedKey
                 .round2DataSubmissions[_round2Contribution.recipientIndexes[i]]
                 .push(
@@ -295,9 +298,9 @@ contract DKG is IDKG {
 
         n = n - 1;
         for (uint8 i; i < n; i++) {
-            publicInputs[2 * i] = round2DataSubmissions[i].cipher[0];
-            publicInputs[2 * i + 1] = round2DataSubmissions[i].cipher[1];
-            publicInputs[2 * n + i] = round2DataSubmissions[i].cipher[2];
+            publicInputs[2 * i] = round2DataSubmissions[i].ciphers[0];
+            publicInputs[2 * i + 1] = round2DataSubmissions[i].ciphers[1];
+            publicInputs[2 * n + i] = round2DataSubmissions[i].ciphers[2];
         }
         for (uint8 i; i < dimension; i++) {
             publicInputs[3 * n + 2 * i] = tallyTracker.R[i][0];
@@ -338,7 +341,7 @@ contract DKG is IDKG {
         ];
         uint8 dimension = distributedKey.dimension;
         // Verify result
-        uint256[][] memory resultVector = getTallyResultVector(_requestID);
+        uint256[][] memory resultVector = getResultVector(_requestID);
         uint256[] memory publicInputs = new uint256[](
             IVerifier(tallyTracker.resultVerifier).getPublicInputsLength()
         );
@@ -424,6 +427,16 @@ contract DKG is IDKG {
         return distributedKeys[_distributedKeyID].round1DataSubmissions;
     }
 
+    function getRound2DataSubmissions(
+        uint256 _distributedKeyID,
+        uint8 _recipientIndex
+    ) external view override returns (Round2DataSubmission[] memory) {
+        return
+            distributedKeys[_distributedKeyID].round2DataSubmissions[
+                _recipientIndex
+            ];
+    }
+
     function getPublicKey(
         uint256 _distributedKeyID
     ) external view override returns (uint256, uint256) {
@@ -461,7 +474,7 @@ contract DKG is IDKG {
         return TallyTrackerState.CONTRIBUTION;
     }
 
-    function getTallyResultVector(
+    function getResultVector(
         bytes32 _requestID
     ) public view override returns (uint256[][] memory) {
         TallyTracker memory tallyTracker = tallyTrackers[_requestID];

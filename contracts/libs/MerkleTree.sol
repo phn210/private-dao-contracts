@@ -8,7 +8,7 @@ interface IPoseidon {
 contract MerkleTree {
     uint256 public constant FIELD_SIZE =
         21888242871839275222246405745257275088548364400416034343698204186575808495617;
-    uint256 public ZERO =
+    uint256 public ZERO_VALUE =
         0x0278878f9bf771ee0d3ecbd67f02536af7696dea0a6fa6acccadcacefb2ae2d9;
     //keccak256(abi.encodePacked("zkVN"));
     IPoseidon public immutable poseidon;
@@ -98,7 +98,7 @@ contract MerkleTree {
     }
 
     function zeros(uint32 i) public view returns (uint256) {
-        if (i == 0) return uint256(ZERO);
+        if (i == 0) return uint256(ZERO_VALUE);
         else if (i == 1)
             return
                 uint256(
@@ -254,5 +254,6 @@ contract MerkleTree {
                 uint256(
                     12574290476933150018993197449726178974065507512729731012385493922295055077355
                 );
+        else revert("Index out of bounds");
     }
 }
