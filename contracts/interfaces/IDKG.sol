@@ -235,7 +235,7 @@ interface IDKG {
         bytes32 _requestID
     ) external view returns (TallyDataSubmission[] memory, uint256[][] memory);
     
-    function getResultVector(
-        bytes32 _requestID
-    ) external view returns (uint256[][] memory);
+    // function getResultVector(
+    //     bytes32 _requestID
+    // ) external view returns (uint256[][] memory);
 }

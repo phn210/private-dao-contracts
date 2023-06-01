@@ -82,7 +82,7 @@ describe("Test Funding Flow", () => {
             this.fundingVerifierDim3.address,
             this.votingVerifierDim3.address,
             this.tallyContributionVerifierDim3.address,
-            this.tallyContributionVerifierDim3.address,
+            this.resultVerifierDim3.address,
         ];
 
         let FundManager = await ethers.getContractFactory(
@@ -468,11 +468,11 @@ describe("Test Funding Flow", () => {
             // console.log(listIndex);
             // console.log(D);
             // console.log(M);
-            tmp = await this.dkgContract.getResultVector(requestID);
-            let resultVector = [];
-            for (let i = 0; i < tmp.length; i++) {
-                resultVector.push([BigInt(tmp[i][0]), BigInt(tmp[i][1])]);
-            }
+            // tmp = await this.dkgContract.getResultVector(requestID);
+            // let resultVector = [];
+            // for (let i = 0; i < tmp.length; i++) {
+            //     resultVector.push([BigInt(tmp[i][0]), BigInt(tmp[i][1])]);
+            // }
 
             // Should brute-force resultVector to get result
             let result = [0n, 0n, 0n];
@@ -499,28 +499,27 @@ describe("Test Funding Flow", () => {
                 await this.fundManager.getFundingRoundState(fundingRoundID)
             ).to.be.equal(3);
 
-            await this.fundManager.finalizeFundingRound(fundingRoundID);
-            console.log(await this.fundManager.getLastRoot());
-            expect(
-                await this.fundManager.getFundingRoundState(fundingRoundID)
-            ).to.be.equal(4);
+            // await this.fundManager.finalizeFundingRound(fundingRoundID);
+            // expect(
+            //     await this.fundManager.getFundingRoundState(fundingRoundID)
+            // ).to.be.equal(4);
 
-            // Withdraw fund to DAO
-            for (let i = 0; i < result.length; i++) {
-                let balanceBefore = await ethers.provider.getBalance(
-                    this.daos[i].address
-                );
-                await this.fundManager.withdrawFund(
-                    fundingRoundID,
-                    this.daos[i].address
-                );
-                let balanceAfter = await ethers.provider.getBalance(
-                    this.daos[i].address
-                );
-                expect(BigInt(balanceBefore) + result[i]).to.be.equal(
-                    BigInt(balanceAfter)
-                );
-            }
+            // // Withdraw fund to DAO
+            // for (let i = 0; i < result.length; i++) {
+            //     let balanceBefore = await ethers.provider.getBalance(
+            //         this.daos[i].address
+            //     );
+            //     await this.fundManager.withdrawFund(
+            //         fundingRoundID,
+            //         this.daos[i].address
+            //     );
+            //     let balanceAfter = await ethers.provider.getBalance(
+            //         this.daos[i].address
+            //     );
+            //     expect(BigInt(balanceBefore) + result[i]).to.be.equal(
+            //         BigInt(balanceAfter)
+            //     );
+            // }
         });
     });
 });

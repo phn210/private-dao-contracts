@@ -354,9 +354,11 @@ contract DKG is IDKG {
                 publicInputs[
                     t + i * dimension * 2 + 2 * j + 1
                 ] = tallyDataSubmissions[i].Di[j][1];
+                console.log("%d", t + i * dimension * 2 + 2 * j);
+                console.log("%d", t + i * dimension * 2 + 2 * j + 1);
             }
         }
-        for (uint8 i = 0; i < dimension; i++) {
+        for (uint8 i; i < dimension; i++) {
             publicInputs[t + t * dimension * 2 + 2 * i] = M[i][0];
             publicInputs[t + t * dimension * 2 + 2 * i + 1] = M[i][1];
             publicInputs[t + t * dimension * 2 + 2 * dimension + i] = _result[
@@ -500,71 +502,71 @@ contract DKG is IDKG {
         );
     }
 
-    function getResultVector(
-        bytes32 _requestID
-    ) public view override returns (uint256[][] memory) {
-        TallyTracker memory tallyTracker = tallyTrackers[_requestID];
-        DistributedKey storage distributedKey = distributedKeys[
-            tallyTracker.distributedKeyID
-        ];
-        require(
-            getTallyTrackerState(_requestID) ==
-                TallyTrackerState.RESULT_AWAITING
-        );
-        uint8 dimension = distributedKey.dimension;
-        (uint8 t, ) = IFundManager(owner).getDKGParams();
+    // function getResultVector(
+    //     bytes32 _requestID
+    // ) public view override returns (uint256[][] memory) {
+    //     TallyTracker memory tallyTracker = tallyTrackers[_requestID];
+    //     DistributedKey storage distributedKey = distributedKeys[
+    //         tallyTracker.distributedKeyID
+    //     ];
+    //     require(
+    //         getTallyTrackerState(_requestID) ==
+    //             TallyTrackerState.RESULT_AWAITING
+    //     );
+    //     uint8 dimension = distributedKey.dimension;
+    //     (uint8 t, ) = IFundManager(owner).getDKGParams();
 
-        uint256[] memory sumDx = new uint256[](dimension);
-        uint256[] memory sumDy = new uint256[](dimension);
-        uint256[][] memory M = tallyTracker.M;
+    //     uint256[] memory sumDx = new uint256[](dimension);
+    //     uint256[] memory sumDy = new uint256[](dimension);
+    //     uint256[][] memory M = tallyTracker.M;
 
-        uint8[] memory listIndex = new uint8[](t);
-        for (uint8 i; i < t; i++) {
-            listIndex[i] = tallyTracker.tallyDataSubmissions[i].senderIndex;
-        }
+    //     uint8[] memory listIndex = new uint8[](t);
+    //     for (uint8 i; i < t; i++) {
+    //         listIndex[i] = tallyTracker.tallyDataSubmissions[i].senderIndex;
+    //     }
 
-        uint256[] memory lagrangeCoefficient = Math.computeLagrangeCoefficient(
-            listIndex,
-            t
-        );
-        for (uint8 i; i < dimension; i++) {
-            sumDx[i] = 0;
-            sumDy[i] = 1;
-        }
-        for (uint8 i; i < t; i++) {
-            TallyDataSubmission memory tallyDataSubmission = tallyTracker
-                .tallyDataSubmissions[i];
-            for (uint8 j; j < dimension; j++) {
-                (uint256 tmpX, uint256 tmpY) = CurveBabyJubJub.pointMul(
-                    tallyDataSubmission.Di[j][0],
-                    tallyDataSubmission.Di[j][1],
-                    lagrangeCoefficient[i]
-                );
-                (sumDx[j], sumDy[j]) = CurveBabyJubJub.pointAdd(
-                    sumDx[j],
-                    sumDy[j],
-                    tmpX,
-                    tmpY
-                );
-            }
-        }
+    //     uint256[] memory lagrangeCoefficient = Math.computeLagrangeCoefficient(
+    //         listIndex,
+    //         t
+    //     );
+    //     for (uint8 i; i < dimension; i++) {
+    //         sumDx[i] = 0;
+    //         sumDy[i] = 1;
+    //     }
+    //     for (uint8 i; i < t; i++) {
+    //         TallyDataSubmission memory tallyDataSubmission = tallyTracker
+    //             .tallyDataSubmissions[i];
+    //         for (uint8 j; j < dimension; j++) {
+    //             (uint256 tmpX, uint256 tmpY) = CurveBabyJubJub.pointMul(
+    //                 tallyDataSubmission.Di[j][0],
+    //                 tallyDataSubmission.Di[j][1],
+    //                 lagrangeCoefficient[i]
+    //             );
+    //             (sumDx[j], sumDy[j]) = CurveBabyJubJub.pointAdd(
+    //                 sumDx[j],
+    //                 sumDy[j],
+    //                 tmpX,
+    //                 tmpY
+    //             );
+    //         }
+    //     }
 
-        uint256[][] memory tallyResultVector = new uint256[][](dimension);
-        for (uint8 i; i < dimension; i++) {
-            sumDx[i] = CurveBabyJubJub.Q - sumDx[i];
-            (uint256 tmpX, uint256 tmpY) = CurveBabyJubJub.pointAdd(
-                sumDx[i],
-                sumDy[i],
-                M[i][0],
-                M[i][1]
-            );
-            tallyResultVector[i] = new uint256[](2);
-            tallyResultVector[i][0] = tmpX;
-            tallyResultVector[i][1] = tmpY;
-        }
+    //     uint256[][] memory tallyResultVector = new uint256[][](dimension);
+    //     for (uint8 i; i < dimension; i++) {
+    //         sumDx[i] = CurveBabyJubJub.Q - sumDx[i];
+    //         (uint256 tmpX, uint256 tmpY) = CurveBabyJubJub.pointAdd(
+    //             sumDx[i],
+    //             sumDy[i],
+    //             M[i][0],
+    //             M[i][1]
+    //         );
+    //         tallyResultVector[i] = new uint256[](2);
+    //         tallyResultVector[i][0] = tmpX;
+    //         tallyResultVector[i][1] = tmpY;
+    //     }
 
-        return tallyResultVector;
-    }
+    //     return tallyResultVector;
+    // }
 
     /*================== INTERNAL FUNCTION ==================*/
 
