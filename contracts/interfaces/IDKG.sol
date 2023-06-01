@@ -152,8 +152,6 @@ interface IDKG {
 
     modifier onlyFounder() virtual;
 
-    modifier onlyOwner() virtual;
-
     modifier onlyCommittee() virtual;
 
     modifier onlyWhitelistedDAO() virtual;
@@ -233,6 +231,10 @@ interface IDKG {
         uint256 _distributedKeyID
     ) external view returns (IVerifier);
 
+    function getTallyDataSubmissions(
+        bytes32 _requestID
+    ) external view returns (TallyDataSubmission[] memory, uint256[][] memory);
+    
     function getResultVector(
         bytes32 _requestID
     ) external view returns (uint256[][] memory);

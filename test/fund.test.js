@@ -7,6 +7,7 @@ const { Utils } = require("../libs/utils");
 const Tree = require("../libs/merkle-tree");
 const { VoterData, CommitteeData } = require("./data");
 
+var dim = 3;
 var t = 3;
 var n = 5;
 var votersLength = VoterData.data1.votingPower.length;
@@ -81,19 +82,21 @@ describe("Test Funding Flow", () => {
             this.fundingVerifierDim3.address,
             this.votingVerifierDim3.address,
             this.tallyContributionVerifierDim3.address,
-            this.resultVerifierDim3.address,
+            this.tallyContributionVerifierDim3.address,
         ];
 
         let FundManager = await ethers.getContractFactory(
             "FundManager",
             this.founder
         );
+        mineBlocks(1);
         this.fundManager = await FundManager.deploy(
             committeeList,
             0,
             merkleTreeConfig,
             fundingRoundConfig,
-            dkgConfig
+            dkgConfig,
+            { gasLimit: 300000000 }
         );
         this.dkgContract = await ethers.getContractAt(
             "DKG",
@@ -435,6 +438,36 @@ describe("Test Funding Flow", () => {
                     ]);
             }
 
+            let tallyDataSubmissions =
+                await this.dkgContract.getTallyDataSubmissions(requestID);
+            // console.log(
+            //     await this.dkgContract.getTallyDataSubmissions(requestID)
+            // );
+            let listIndex = [];
+            let D = [];
+            let M = [];
+
+            for (let i = 0; i < tallyDataSubmissions[0].length; i++) {
+                let tallyDataSubmission = tallyDataSubmissions[0][i];
+                listIndex.push(BigInt(tallyDataSubmission.senderIndex));
+                D[i] = [];
+                for (let j = 0; j < dim; j++) {
+                    D[i].push([
+                        BigInt(tallyDataSubmission.Di[j][0]),
+                        BigInt(tallyDataSubmission.Di[j][1]),
+                    ]);
+                }
+            }
+
+            for (let i = 0; i < dim; i++) {
+                M.push([
+                    BigInt(tallyDataSubmissions[1][i][0]),
+                    BigInt(tallyDataSubmissions[1][i][1]),
+                ]);
+            }
+            // console.log(listIndex);
+            // console.log(D);
+            // console.log(M);
             tmp = await this.dkgContract.getResultVector(requestID);
             let resultVector = [];
             for (let i = 0; i < tmp.length; i++) {
@@ -454,19 +487,20 @@ describe("Test Funding Flow", () => {
             // console.log(resultVector);
             // console.log(result);
             let { proof, publicSignals } = await snarkjs.groth16.fullProve(
-                { resultVector: resultVector, result: result },
+                { listIndex: listIndex, D: D, M: M, result: result },
                 __dirname + "/../zk-resources/wasm/result-verifier_dim3.wasm",
                 __dirname +
                     "/../zk-resources/zkey/result-verifier_dim3_final.zkey"
             );
             proof = Utils.genSolidityProof(proof.pi_a, proof.pi_b, proof.pi_c);
-            // console.log(proof);
+            console.log(proof);
             await this.dkgContract.submitTallyResult(requestID, result, proof);
             expect(
                 await this.fundManager.getFundingRoundState(fundingRoundID)
             ).to.be.equal(3);
 
             await this.fundManager.finalizeFundingRound(fundingRoundID);
+            console.log(await this.fundManager.getLastRoot());
             expect(
                 await this.fundManager.getFundingRoundState(fundingRoundID)
             ).to.be.equal(4);

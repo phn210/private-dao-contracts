@@ -132,7 +132,7 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
 
         fundingRound.requestID = requestID;
         fundingRound.listDAO = listDAO;
-        fundingRound.launchedAt = block.number;
+        fundingRound.launchedAt = uint64(block.number);
 
         fundingRoundInProgress = true;
 
@@ -198,20 +198,20 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
     }
 
     function startTallying(uint256 _fundingRoundID) external override {
-        FundingRound storage fundingRound = fundingRounds[_fundingRoundID];
+        bytes32 requestID = fundingRounds[_fundingRoundID].requestID;
         require(
             getFundingRoundState(_fundingRoundID) == FundingRoundState.TALLYING
         );
 
-        Request memory request = requests[fundingRound.requestID];
+        Request memory request = requests[requestID];
         dkgContract.startTallying(
-            fundingRound.requestID,
+            requestID,
             request.distributedKeyID,
             request.R,
             request.M
         );
 
-        emit TallyStarted(_fundingRoundID, fundingRound.requestID);
+        emit TallyStarted(_fundingRoundID, requestID);
     }
 
     function submitTallyResult(
@@ -238,6 +238,7 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
         } else if (
             getFundingRoundState(_fundingRoundID) == FundingRoundState.SUCCEEDED
         ) {
+            // _insertBatch(fundingRound.listCommitment);
             for (uint256 i; i < fundingRound.listCommitment.length; i++) {
                 _insert(fundingRound.listCommitment[i]);
                 emit LeafInserted(fundingRound.listCommitment[i]);
@@ -247,7 +248,7 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
                     .result[i];
             }
             delete fundingRound.listCommitment;
-            fundingRound.finalizedAt = block.number;
+            fundingRound.finalizedAt = uint64(block.number);
 
             fundingRoundInProgress = false;
             emit FundingRoundFinalized(_fundingRoundID);
@@ -355,12 +356,14 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
     function getFundingRoundState(
         uint256 _fundingRoundID
     ) public view returns (FundingRoundState) {
-        FundingRound storage fundingRound = fundingRounds[_fundingRoundID];
-        Request memory request = requests[fundingRound.requestID];
-        uint256 endPending = fundingRound.launchedAt + config.pendingPeriod;
-        uint256 endActive = endPending + config.activePeriod;
-        uint256 endTallying = endActive + config.tallyPeriod;
-        if (fundingRound.finalizedAt != 0) {
+        uint64 finalizedAt = fundingRounds[_fundingRoundID].finalizedAt;
+        uint64 launchedAt = fundingRounds[_fundingRoundID].launchedAt;
+        bytes32 requestID = fundingRounds[_fundingRoundID].requestID;
+        Request memory request = requests[requestID];
+        uint64 endPending = launchedAt + config.pendingPeriod;
+        uint64 endActive = endPending + config.activePeriod;
+        uint64 endTallying = endActive + config.tallyPeriod;
+        if (finalizedAt != 0) {
             return FundingRoundState.FINALIZED;
         }
         if (block.number <= endPending) {

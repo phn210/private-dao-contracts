@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
+import "hardhat/console.sol";
 
 interface IPoseidon {
     function hash(uint256[2] calldata input) external pure returns (uint256);
@@ -73,6 +74,47 @@ contract MerkleTree {
         roots[newRootIndex] = currentLevelsHash;
         nextIndex = _nextIndex + 1;
         return _nextIndex;
+    }
+
+    function _insertBatch(uint256[] memory _leafs) internal {
+        uint32 levels_ = levels;
+        uint256[] memory filledSubtrees_ = new uint256[](levels_);
+        for (uint32 i; i < levels_; i++) {
+            filledSubtrees_[i] = filledSubtrees[i];
+        }
+        uint32 nextIndex_ = nextIndex;
+        uint256 currentLevelsHash;
+        uint256 left;
+        uint256 right;
+        uint32 currentIndex;
+        for (uint32 i; i < _leafs.length; i++) {
+            require(
+                nextIndex_ != uint32(2) ** levels,
+                "Merkle tree is full. No more leaves can be added"
+            );
+            currentIndex = nextIndex_;
+            currentLevelsHash = _leafs[i];
+            for (uint32 j = 0; j < levels_; j++) {
+                if (currentIndex % 2 == 0) {
+                    left = currentLevelsHash;
+                    right = zeros(j);
+                    filledSubtrees_[j] = currentLevelsHash;
+                } else {
+                    left = filledSubtrees_[j];
+                    right = currentLevelsHash;
+                }
+                currentLevelsHash = hash(poseidon, left, right);
+                currentIndex /= 2;
+            }
+            nextIndex_ += 1;
+        }
+        for (uint32 i; i < levels; i++) {
+            filledSubtrees[i] = filledSubtrees_[i];
+        }
+        uint32 newRootIndex = (currentRootIndex + 1) % ROOT_HISTORY_SIZE;
+        currentRootIndex = newRootIndex;
+        roots[newRootIndex] = currentLevelsHash;
+        nextIndex = nextIndex_;
     }
 
     function isKnownRoot(uint256 _root) public view returns (bool) {

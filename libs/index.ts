@@ -287,6 +287,13 @@ namespace Committee {
         return result;
     }
 
+    export function getResultContribution(
+        listIndex: Array<BigInt>,
+        D: Array<Array<BigInt[]>>,
+        M: Array<BigInt[]>,
+        result: Array<BigInt>
+    ) {}
+
     export function getLagrangeCoefficient(
         x: Array<number>,
         threshold: number

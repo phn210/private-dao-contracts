@@ -6,6 +6,7 @@ import "./interfaces/IVerifier.sol";
 import "./interfaces/IFundManager.sol";
 import "./interfaces/IDKGRequest.sol";
 import "./libs/CurveBabyJubJub.sol";
+import "./libs/CurveBabyJubJubHelper.sol";
 import "./libs/Math.sol";
 
 contract DKG is IDKG {
@@ -13,7 +14,7 @@ contract DKG is IDKG {
     uint256 public distributedKeyCounter;
 
     mapping(uint256 => DistributedKey) public distributedKeys;
-    mapping(bytes32 => TallyTracker) public tallyTrackers; // rename
+    mapping(bytes32 => TallyTracker) public tallyTrackers;
 
     IVerifier public round2Verifier;
     // dimension => Verifier
@@ -40,11 +41,6 @@ contract DKG is IDKG {
             IFundManager(owner).isFounder(msg.sender),
             "dkgContract: msg.sender is not Founder"
         );
-        _;
-    }
-
-    modifier onlyOwner() override {
-        require(msg.sender == owner, "dkgContract: msg.sender is not Owner");
         _;
     }
 
@@ -340,17 +336,33 @@ contract DKG is IDKG {
             tallyTracker.distributedKeyID
         ];
         uint8 dimension = distributedKey.dimension;
+        (uint8 t, ) = IFundManager(owner).getDKGParams();
+
         // Verify result
-        uint256[][] memory resultVector = getResultVector(_requestID);
         uint256[] memory publicInputs = new uint256[](
             IVerifier(tallyTracker.resultVerifier).getPublicInputsLength()
         );
-        for (uint8 i = 0; i < dimension; i++) {
-            publicInputs[i] = _result[i];
-            publicInputs[dimension + 2 * i] = resultVector[i][0];
-            publicInputs[dimension + 2 * i + 1] = resultVector[i][1];
+        TallyDataSubmission[] memory tallyDataSubmissions = tallyTracker
+            .tallyDataSubmissions;
+        uint256[][] memory M = IDKGRequest(tallyTracker.dao).getM(_requestID);
+        for (uint8 i; i < t; i++) {
+            publicInputs[i] = tallyDataSubmissions[i].senderIndex;
+            for (uint8 j; j < dimension; j++) {
+                publicInputs[
+                    t + i * dimension * 2 + 2 * j
+                ] = tallyDataSubmissions[i].Di[j][0];
+                publicInputs[
+                    t + i * dimension * 2 + 2 * j + 1
+                ] = tallyDataSubmissions[i].Di[j][1];
+            }
         }
-
+        for (uint8 i = 0; i < dimension; i++) {
+            publicInputs[t + t * dimension * 2 + 2 * i] = M[i][0];
+            publicInputs[t + t * dimension * 2 + 2 * i + 1] = M[i][1];
+            publicInputs[t + t * dimension * 2 + 2 * dimension + i] = _result[
+                i
+            ];
+        }
         require(
             _verifyProof(
                 IVerifier(tallyTracker.resultVerifier),
@@ -472,6 +484,20 @@ contract DKG is IDKG {
             return TallyTrackerState.RESULT_AWAITING;
         }
         return TallyTrackerState.CONTRIBUTION;
+    }
+
+    function getTallyDataSubmissions(
+        bytes32 _requestID
+    )
+        external
+        view
+        override
+        returns (TallyDataSubmission[] memory, uint256[][] memory)
+    {
+        return (
+            tallyTrackers[_requestID].tallyDataSubmissions,
+            IDKGRequest(tallyTrackers[_requestID].dao).getM(_requestID)
+        );
     }
 
     function getResultVector(

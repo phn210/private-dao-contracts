@@ -20,14 +20,14 @@ interface IFundManager {
         uint256 balance;
         mapping(address => uint256) balances;
         mapping(address => uint256) daoBalances;
-        uint256 launchedAt;
-        uint256 finalizedAt;
+        uint64 launchedAt;
+        uint64 finalizedAt;
     }
 
     struct FundingRoundConfig {
-        uint256 pendingPeriod;
-        uint256 activePeriod;
-        uint256 tallyPeriod;
+        uint64 pendingPeriod;
+        uint64 activePeriod;
+        uint64 tallyPeriod;
     }
 
     struct MerkleTreeConfig {

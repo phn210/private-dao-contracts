@@ -30,14 +30,15 @@ const config: HardhatUserConfig = {
     defaultNetwork: "hardhat",
     networks: {
         hardhat: {
-            allowUnlimitedContractSize: false,
+            allowUnlimitedContractSize: true,
             chainId: chainIds.hardhat,
+            blockGasLimit: 1000000000,
         },
         goerli: {
             accounts: process.env.KEYS?.split(" "),
             chainId: chainIds.goerli,
-            url: "https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161"
-        }
+            url: "https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
+        },
     },
     solidity: {
         compilers: [
@@ -62,7 +63,7 @@ const config: HardhatUserConfig = {
         sources: "./contracts",
         tests: "./test",
         cache: "./cache",
-        artifacts: "./artifacts"
+        artifacts: "./artifacts",
     },
     mocha: {
         timeout: 1000000,
