@@ -1,5 +1,6 @@
 import bigInt, { BigInteger, BigNumber } from "big-integer";
 import { randomBytes } from "crypto";
+import util from "util";
 
 namespace Utils {
     export function getBigInt(n: BigInteger): BigInt {
@@ -69,7 +70,7 @@ namespace Utils {
         (BigInt.prototype as any).toJSON = function () {
             return this.toString();
         };
-        return JSON.stringify(circuitInput);
+        return JSON.stringify(circuitInput, null, " ");
     }
 
     export function bigIntegerToHex32(number: BigInteger): string {
@@ -97,6 +98,16 @@ namespace Utils {
         const proof =
             "0x" + flatProof.map((x) => bigIntegerToHex32(x)).join("");
         return proof;
+    }
+
+    export function logFullObject(object: any) {
+        console.log(
+            util.inspect(object, {
+                showHidden: false,
+                depth: null,
+                colors: true,
+            })
+        );
     }
 }
 
