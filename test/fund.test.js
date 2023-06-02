@@ -381,7 +381,7 @@ describe("Test Funding Flow", () => {
                 this.fundManager.address,
                 fundingRoundID
             );
-            tmp = await this.fundManager.getR(requestID);
+            tmp = await this.dkgContract.getR(requestID);
             let R = [];
             for (let i = 0; i < tmp.length; i++) {
                 R.push([BigInt(tmp[i][0]), BigInt(tmp[i][1])]);
@@ -440,16 +440,14 @@ describe("Test Funding Flow", () => {
 
             let tallyDataSubmissions =
                 await this.dkgContract.getTallyDataSubmissions(requestID);
-            // console.log(
-            //     await this.dkgContract.getTallyDataSubmissions(requestID)
-            // );
+            tmp = await this.dkgContract.getM(requestID);
             let listIndex = [];
             let D = [];
             let M = [];
 
-            for (let i = 0; i < tallyDataSubmissions[0].length; i++) {
-                let tallyDataSubmission = tallyDataSubmissions[0][i];
-                listIndex.push(BigInt(tallyDataSubmission.senderIndex));
+            for (let i = 0; i < tallyDataSubmissions.length; i++) {
+                let tallyDataSubmission = tallyDataSubmissions[i];
+                listIndex.push(Number(tallyDataSubmission.senderIndex));
                 D[i] = [];
                 for (let j = 0; j < dim; j++) {
                     D[i].push([
@@ -460,19 +458,11 @@ describe("Test Funding Flow", () => {
             }
 
             for (let i = 0; i < dim; i++) {
-                M.push([
-                    BigInt(tallyDataSubmissions[1][i][0]),
-                    BigInt(tallyDataSubmissions[1][i][1]),
-                ]);
+                M.push([BigInt(tmp[i][0]), BigInt(tmp[i][1])]);
             }
-            // console.log(listIndex);
-            // console.log(D);
-            // console.log(M);
-            // tmp = await this.dkgContract.getResultVector(requestID);
-            // let resultVector = [];
-            // for (let i = 0; i < tmp.length; i++) {
-            //     resultVector.push([BigInt(tmp[i][0]), BigInt(tmp[i][1])]);
-            // }
+
+            let resultVector = Committee.getResultVector(listIndex, D, M);
+            // console.log(resultVector);
 
             // Should brute-force resultVector to get result
             let result = [0n, 0n, 0n];
@@ -484,7 +474,6 @@ describe("Test Funding Flow", () => {
                         BigInt(fundingVector[j]);
                 }
             }
-            // console.log(resultVector);
             // console.log(result);
             let { proof, publicSignals } = await snarkjs.groth16.fullProve(
                 { listIndex: listIndex, D: D, M: M, result: result },
@@ -493,7 +482,7 @@ describe("Test Funding Flow", () => {
                     "/../zk-resources/zkey/result-verifier_dim3_final.zkey"
             );
             proof = Utils.genSolidityProof(proof.pi_a, proof.pi_b, proof.pi_c);
-            console.log(proof);
+            // console.log(proof);
             await this.dkgContract.submitTallyResult(requestID, result, proof);
             expect(
                 await this.fundManager.getFundingRoundState(fundingRoundID)

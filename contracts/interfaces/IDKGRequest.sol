@@ -32,12 +32,4 @@ interface IDKGRequest {
     function getDistributedKeyID(
         bytes32 _requestID
     ) external view returns (uint256);
-
-    function getR(
-        bytes32 _requestID
-    ) external view returns (uint256[][] memory);
-
-    function getM(
-        bytes32 _requestID
-    ) external view returns (uint256[][] memory);
 }

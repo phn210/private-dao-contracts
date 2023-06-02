@@ -422,14 +422,6 @@ contract DAO is IDAO, IDKGRequest {
         bytes32 _requestID
     ) external view override returns (uint256) {}
 
-    function getR(
-        bytes32 _requestID
-    ) external view override returns (uint256[][] memory) {}
-
-    function getM(
-        bytes32 _requestID
-    ) external view override returns (uint256[][] memory) {}
-
     /**
      * ==============================
      * ===== INTERNAL FUNCTIONS =====

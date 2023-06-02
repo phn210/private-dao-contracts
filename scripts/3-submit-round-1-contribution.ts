@@ -7,10 +7,10 @@ import { Utils } from "../libs/utils";
 
 var t = 3;
 var n = 5;
-var mockData = true;
-var keyID = 0;
 // committeeIndex from 1 to n
 var committeeIndex = 1;
+var mockData = true;
+var keyID = 0;
 
 async function main() {
     let chainID = String(network.config.chainId);
@@ -25,6 +25,9 @@ async function main() {
     }
 
     console.log("Committee data: ", Utils.logFullObject(committeeData));
+    console.log(
+        "If this is newly generated data, then copy it to /test/data.ts at the corresponding position according to the committeeIndex for use in subsequent steps."
+    );
     let x = [];
     let y = [];
     for (let i = 0; i < t; i++) {

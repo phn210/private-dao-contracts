@@ -22,6 +22,7 @@ interface IFundManager {
         mapping(address => uint256) daoBalances;
         uint64 launchedAt;
         uint64 finalizedAt;
+        uint64 failedAt;
     }
 
     struct FundingRoundConfig {

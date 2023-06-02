@@ -9,9 +9,9 @@ import { Utils } from "../libs/utils";
 
 var t = 3;
 var n = 5;
-var keyID = 0;
 // committeeIndex from 1 to n
 var committeeIndex = 1;
+var keyID = 0;
 
 async function main() {
     let chainID = String(network.config.chainId);

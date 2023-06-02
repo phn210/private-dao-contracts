@@ -344,7 +344,7 @@ contract DKG is IDKG {
         );
         TallyDataSubmission[] memory tallyDataSubmissions = tallyTracker
             .tallyDataSubmissions;
-        uint256[][] memory M = IDKGRequest(tallyTracker.dao).getM(_requestID);
+        uint256[][] memory M = tallyTracker.M;
         for (uint8 i; i < t; i++) {
             publicInputs[i] = tallyDataSubmissions[i].senderIndex;
             for (uint8 j; j < dimension; j++) {
@@ -490,16 +490,20 @@ contract DKG is IDKG {
 
     function getTallyDataSubmissions(
         bytes32 _requestID
-    )
-        external
-        view
-        override
-        returns (TallyDataSubmission[] memory, uint256[][] memory)
-    {
-        return (
-            tallyTrackers[_requestID].tallyDataSubmissions,
-            IDKGRequest(tallyTrackers[_requestID].dao).getM(_requestID)
-        );
+    ) external view override returns (TallyDataSubmission[] memory) {
+        return tallyTrackers[_requestID].tallyDataSubmissions;
+    }
+
+    function getR(
+        bytes32 _requestID
+    ) external view override returns (uint256[][] memory) {
+        return tallyTrackers[_requestID].R;
+    }
+
+    function getM(
+        bytes32 _requestID
+    ) external view override returns (uint256[][] memory) {
+        return tallyTrackers[_requestID].M;
     }
 
     // function getResultVector(

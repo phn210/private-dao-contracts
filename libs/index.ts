@@ -287,24 +287,17 @@ namespace Committee {
         return result;
     }
 
-    export function getResultContribution(
-        listIndex: Array<BigInt>,
-        D: Array<Array<BigInt[]>>,
-        M: Array<BigInt[]>,
-        result: Array<BigInt>
-    ) {}
-
     export function getLagrangeCoefficient(
-        x: Array<number>,
-        threshold: number
+        listIndex: Array<number>
     ): Array<BigInteger> {
+        let threshold = listIndex.length;
         let lagrangeCoefficient = new Array<BigInteger>(threshold);
         for (let i = 0; i < threshold; i++) {
-            let indexI = x[i];
+            let indexI = listIndex[i];
             let numerator = bigInt(1);
             let denominator = bigInt(1);
             for (let j = 0; j < threshold; j++) {
-                let indexJ = x[j];
+                let indexJ = listIndex[j];
                 if (indexI != indexJ) {
                     numerator = numerator.multiply(indexJ);
                     denominator = denominator.multiply(indexJ - indexI);
@@ -321,13 +314,13 @@ namespace Committee {
         }
         return lagrangeCoefficient;
     }
-    export function getTallyResult(
-        M: Array<BigInt[]>,
+    export function getResultVector(
+        listIndex: Array<number>,
         D: Array<Array<BigInt[]>>,
-        x: Array<number>,
-        threshold: number
+        M: Array<BigInt[]>
     ): Array<BigInt[]> {
-        let lagrangeCoefficient = getLagrangeCoefficient(x, threshold);
+        let lagrangeCoefficient = getLagrangeCoefficient(listIndex);
+        let threshold = listIndex.length;
         // for (let i = 1; i <= threshold; i++) {
         //     let indexI = i - 1;
         //     let numerator = bigInt(1);

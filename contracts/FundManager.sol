@@ -24,7 +24,7 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
 
     mapping(bytes32 => Request) public requests;
     mapping(uint256 => FundingRound) public fundingRounds;
-    uint256 fundingRoundCounter;
+    uint256 public fundingRoundCounter;
 
     Queue public fundingRoundQueue;
     IDKG public dkgContract;
@@ -230,7 +230,11 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
         FundingRound storage fundingRound = fundingRounds[_fundingRoundID];
         Request memory request = requests[fundingRound.requestID];
 
-        if (getFundingRoundState(_fundingRoundID) == FundingRoundState.FAILED) {
+        if (
+            getFundingRoundState(_fundingRoundID) == FundingRoundState.FAILED &&
+            fundingRound.failedAt == 0
+        ) {
+            fundingRound.failedAt = uint64(block.number);
             delete fundingRound.listCommitment;
             fundingRoundInProgress = false;
 
@@ -333,18 +337,6 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
         bytes32 _requestID
     ) external view override returns (uint256) {
         return requests[_requestID].distributedKeyID;
-    }
-
-    function getR(
-        bytes32 _requestID
-    ) external view override returns (uint256[][] memory) {
-        return requests[_requestID].R;
-    }
-
-    function getM(
-        bytes32 _requestID
-    ) external view override returns (uint256[][] memory) {
-        return requests[_requestID].M;
     }
 
     function getFundingRoundState(
