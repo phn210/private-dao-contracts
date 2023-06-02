@@ -29,10 +29,6 @@ interface IDKGRequest {
         uint256 _nonce
     ) external pure returns (bytes32);
 
-    function getRequest(
-        bytes32 _requestID
-    ) external view returns (Request memory);
-
     function getDistributedKeyID(
         bytes32 _requestID
     ) external view returns (uint256);

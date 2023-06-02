@@ -329,12 +329,6 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
         return fundingRounds[_fundingRoundID].balance;
     }
 
-    function getRequest(
-        bytes32 _requestID
-    ) external view override returns (Request memory) {
-        return requests[_requestID];
-    }
-
     function getDistributedKeyID(
         bytes32 _requestID
     ) external view override returns (uint256) {

@@ -499,27 +499,27 @@ describe("Test Funding Flow", () => {
                 await this.fundManager.getFundingRoundState(fundingRoundID)
             ).to.be.equal(3);
 
-            // await this.fundManager.finalizeFundingRound(fundingRoundID);
-            // expect(
-            //     await this.fundManager.getFundingRoundState(fundingRoundID)
-            // ).to.be.equal(4);
+            await this.fundManager.finalizeFundingRound(fundingRoundID);
+            expect(
+                await this.fundManager.getFundingRoundState(fundingRoundID)
+            ).to.be.equal(4);
 
-            // // Withdraw fund to DAO
-            // for (let i = 0; i < result.length; i++) {
-            //     let balanceBefore = await ethers.provider.getBalance(
-            //         this.daos[i].address
-            //     );
-            //     await this.fundManager.withdrawFund(
-            //         fundingRoundID,
-            //         this.daos[i].address
-            //     );
-            //     let balanceAfter = await ethers.provider.getBalance(
-            //         this.daos[i].address
-            //     );
-            //     expect(BigInt(balanceBefore) + result[i]).to.be.equal(
-            //         BigInt(balanceAfter)
-            //     );
-            // }
+            // Withdraw fund to DAO
+            for (let i = 0; i < result.length; i++) {
+                let balanceBefore = await ethers.provider.getBalance(
+                    this.daos[i].address
+                );
+                await this.fundManager.withdrawFund(
+                    fundingRoundID,
+                    this.daos[i].address
+                );
+                let balanceAfter = await ethers.provider.getBalance(
+                    this.daos[i].address
+                );
+                expect(BigInt(balanceBefore) + result[i]).to.be.equal(
+                    BigInt(balanceAfter)
+                );
+            }
         });
     });
 });

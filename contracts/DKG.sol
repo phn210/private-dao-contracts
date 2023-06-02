@@ -354,8 +354,8 @@ contract DKG is IDKG {
                 publicInputs[
                     t + i * dimension * 2 + 2 * j + 1
                 ] = tallyDataSubmissions[i].Di[j][1];
-                console.log("%d", t + i * dimension * 2 + 2 * j);
-                console.log("%d", t + i * dimension * 2 + 2 * j + 1);
+                // console.log("%d", t + i * dimension * 2 + 2 * j);
+                // console.log("%d", t + i * dimension * 2 + 2 * j + 1);
             }
         }
         for (uint8 i; i < dimension; i++) {

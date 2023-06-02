@@ -418,10 +418,6 @@ contract DAO is IDAO, IDKGRequest {
             keccak256(abi.encodePacked(_distributedKeyId, _requestor, _nonce));
     }
 
-    function getRequest(
-        bytes32 _requestID
-    ) external view override returns (Request memory) {}
-
     function getDistributedKeyID(
         bytes32 _requestID
     ) external view override returns (uint256) {}
