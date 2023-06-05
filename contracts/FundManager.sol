@@ -15,6 +15,7 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
     uint8 public numberOfCommittees;
     uint8 public threshold;
     bool public fundingRoundInProgress;
+    address public daoManager;
     uint256 public reserveFactor;
     FundingRoundConfig public config;
     uint256 public bounty;
@@ -31,6 +32,7 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
 
     constructor(
         address[] memory _committeeList,
+        address _daoManager,
         uint256 _reserveFactor,
         MerkleTreeConfig memory _merkleTreeConfig,
         FundingRoundConfig memory _fundingRoundConfig,
@@ -45,7 +47,10 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
             _committeeList.length >= 5,
             "FundManager contract: Require the number of committees greater than 5"
         );
+        require(_daoManager != address(0), "FundManager: DAOManager can not be address 0");
+
         founder = msg.sender;
+        daoManager = _daoManager;
 
         for (uint256 i = 0; i < _committeeList.length; i++) {
             isCommittee[_committeeList[i]] = true;
@@ -71,8 +76,8 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
         _;
     }
 
-    modifier onlyWhitelistedDAO() override {
-        require(isWhitelistedDAO[msg.sender]);
+    modifier onlyDAOManager() override {
+        require(msg.sender == daoManager);
         _;
     }
 
@@ -83,10 +88,10 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
 
     /*================== EXTERNAL FUNCTION ==================*/
 
-    function applyForFunding() external override onlyWhitelistedDAO {
-        fundingRoundQueue.enqueue(msg.sender);
+    function applyForFunding(address _dao) external override onlyDAOManager {
+        fundingRoundQueue.enqueue(_dao);
 
-        emit FundingRoundApplied(msg.sender);
+        emit FundingRoundApplied(_dao);
     }
 
     function launchFundingRound(
@@ -395,7 +400,7 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
 
     /*=================== FOR TEST REASON ===================*/
 
-    function addWhitelistedDAO(address _dao) external onlyFounder {
+    function addWhitelistedDAO(address _dao) external onlyFounder onlyDKG {
         isWhitelistedDAO[_dao] = true;
     }
 }

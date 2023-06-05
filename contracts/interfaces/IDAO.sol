@@ -48,6 +48,14 @@ interface IDAO {
         bytes data;
     }
 
+    struct VoteData {
+        uint256 root;
+        uint256 nullifierHash;
+        uint256[][] _R;
+        uint256[][] _M;
+        bytes _proof;
+    }
+
     /**
      * @notice Emitted when a valid proposal is created.
      */
@@ -94,7 +102,7 @@ interface IDAO {
      * @dev FIXME update for ZKP
      * @notice Emitted when a vote casted.
      */
-    event VoteCast(uint256 proposalId);
+    event VoteCast(uint256 proposalId, uint256 nullifierHash);
 
     function propose(Action[] memory actions, bytes32 descriptionHash) external returns (uint256 proposalId);
 
@@ -106,10 +114,7 @@ interface IDAO {
 
     function castVote(
         uint256 proposalId,
-        uint256 _commitment,
-        uint256[][] calldata _R,
-        uint256[][] calldata _M,
-        bytes calldata _proof
+        VoteData calldata voteData
     ) external;
 
     function tally(uint256 proposalId) external;

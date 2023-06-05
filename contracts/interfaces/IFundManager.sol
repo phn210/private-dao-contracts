@@ -85,11 +85,11 @@ interface IFundManager {
 
     modifier onlyCommittee() virtual;
 
-    modifier onlyWhitelistedDAO() virtual;
+    modifier onlyDAOManager() virtual;
 
     /*================== EXTERNAL FUNCTION ==================*/
 
-    function applyForFunding() external;
+    function applyForFunding(address dao) external;
 
     function launchFundingRound(
         uint256 _distributedKeyID

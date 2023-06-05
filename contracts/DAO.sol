@@ -3,8 +3,10 @@ pragma solidity ^0.8.0;
 import "./interfaces/IDAO.sol";
 import "./interfaces/IDKG.sol";
 import "./interfaces/IDKGRequest.sol";
-import "./interfaces/IFundManager.sol";
 import "./interfaces/ITimelock.sol";
+import "./libs/Math.sol";
+import "./libs/MerkleTree.sol";
+import "./FundManager.sol";
 
 contract DAO is IDAO, IDKGRequest {
     // Used to read proposals data
@@ -17,7 +19,7 @@ contract DAO is IDAO, IDKGRequest {
     Config public config;
 
     //
-    IFundManager public fundManager;
+    FundManager public fundManager;
 
     // The address of the DKG contract.
     IDKG public dkg;
@@ -86,7 +88,7 @@ contract DAO is IDAO, IDKGRequest {
         uint256 _distributedKeyId
     ) {
         config = _config;
-        fundManager = IFundManager(_fundManager);
+        fundManager = FundManager(_fundManager);
         dkg = IDKG(_dkg);
         distributedKeyId = _distributedKeyId;
     }
@@ -163,11 +165,81 @@ contract DAO is IDAO, IDKGRequest {
 
     function castVote(
         uint256 proposalId,
-        uint256 commitment,
-        uint256[][] calldata _R,
-        uint256[][] calldata _M,
-        bytes calldata _proof
-    ) external override {}
+        VoteData calldata voteData
+    ) external override {
+        Proposal memory proposal = proposals[proposalId];
+
+        require(
+            state(proposalId) == ProposalState.Active,
+            "DAO::CastVote: Proposal is not in the voting period"
+        );
+
+        require(
+            !nullifierHashes[proposalId][voteData.nullifierHash],
+            "DAO::CastVote: Double voting is not allowed"
+        );
+
+        require(
+            fundManager.isKnownRoot(voteData.root),
+            "DAO::CastVote: Root is invalid"
+        );
+
+        nullifierHashes[proposalId][voteData.nullifierHash] = true;
+
+        bytes32 requestId = getRequestID(
+            distributedKeyId,
+            address(this),
+            proposalId
+        );
+        Request storage request = requests[requestId];
+
+        uint8 dimension = dkg.getDimension(request.distributedKeyID);
+        require(
+            voteData._R.length == dimension && voteData._M.length == dimension,
+            "FundManager: invalid input length"
+        );
+        
+        IVerifier verifier = dkg.getVerifier(request.distributedKeyID);
+        uint256[] memory publicInputs = new uint256[](
+            verifier.getPublicInputsLength()
+        );
+
+        publicInputs[0] = voteData.root;
+        publicInputs[1] = (uint256)(uint160(address(this)));
+        publicInputs[2] = proposalId;
+        (publicInputs[3], publicInputs[4]) = dkg.getPublicKey(
+            request.distributedKeyID
+        );
+        publicInputs[5] = voteData.nullifierHash;
+        for (uint8 i; i < dimension; i++) {
+            publicInputs[6 + 2 * i] = voteData._R[i][0];
+            publicInputs[6 + 2 * i + 1] = voteData._R[i][1];
+            publicInputs[6 + 2 * dimension + 2 * i] = voteData._M[i][0];
+            publicInputs[6 + 2 * dimension + 2 * i + 1] = voteData._M[i][1];
+        }
+
+        require(
+            _verifyProof(verifier, voteData._proof, publicInputs),
+            "DAO::CastVote: ZK Proof is invalid"
+        );
+
+        for (uint8 i; i < dimension; i++) {
+            (request.R[i][0], request.R[i][1]) = CurveBabyJubJub.pointAdd(
+                request.R[i][0],
+                request.R[i][1],
+                voteData._R[i][0],
+                voteData._R[i][1]
+            );
+            (request.M[i][0], request.M[i][1]) = CurveBabyJubJub.pointAdd(
+                request.M[i][0],
+                request.M[i][1],
+                voteData._M[i][0],
+                voteData._M[i][1]
+            );
+        }
+
+        emit VoteCast(proposalId, voteData.nullifierHash);
+    }
 
     /**
      * Tally the result of a proposal.
@@ -427,6 +499,28 @@ contract DAO is IDAO, IDKGRequest {
      * ===== INTERNAL FUNCTIONS =====
      * ==============================
      */
+
+    function _verifyProof(
+        IVerifier _verifier,
+        bytes calldata _proof,
+        uint256[] memory _publicInputs
+    ) internal view returns (bool) {
+        require(_publicInputs.length == _verifier.getPublicInputsLength());
+        uint256[8] memory proof = abi.decode(_proof, (uint256[8]));
+        for (uint8 i = 0; i < proof.length; i++) {
+            require(
+                proof[i] < Math.PRIME_Q,
+                "verifier-proof-element-gte-prime-q"
+            );
+        }
+        return
+            _verifier.verifyProof(
+                [proof[0], proof[1]],
+                [[proof[2], proof[3]], [proof[4], proof[5]]],
+                [proof[6], proof[7]],
+                _publicInputs
+            );
+    }
 
     function _queueTransaction(
         address _target,
