@@ -6,6 +6,7 @@ const { Committee, Voter } = require("../libs/index");
 const { Utils } = require("../libs/utils");
 const Tree = require("../libs/merkle-tree");
 const { VoterData, CommitteeData } = require("./data");
+const { utils } = require("mocha");
 
 var dim = 3;
 var t = 3;
@@ -148,8 +149,8 @@ describe("Test Funding Flow", () => {
                     keyID
                 );
                 let recipientIndexes = [];
-                let ciphers = [];
-                let proofs = [];
+                let recipientPublicKeys = [];
+                let f = [];
 
                 for (let j = 0; j < round1DataSubmissions.length; j++) {
                     let round1DataSubmission = round1DataSubmissions[j];
@@ -162,41 +163,35 @@ describe("Test Funding Flow", () => {
                         let recipientPublicKeyY = BigInt(
                             round1DataSubmission.y[0]
                         );
-                        let round2Contribution =
-                            Committee.getRound2Contribution(
-                                recipientIndex,
-                                [recipientPublicKeyX, recipientPublicKeyY],
-                                CommitteeData.data1[i].C,
-                                CommitteeData.data1[i].f[recipientIndex]
-                            );
-                        ciphers.push([
-                            round2Contribution.share.u[0],
-                            round2Contribution.share.u[1],
-                            round2Contribution.share.c,
+                        recipientPublicKeys.push([
+                            recipientPublicKeyX,
+                            recipientPublicKeyY,
                         ]);
-                        let { proof, publicSignals } =
-                            await snarkjs.groth16.fullProve(
-                                round2Contribution.circuitInput,
-                                __dirname +
-                                    "/../zk-resources/wasm/round-2-contribution.wasm",
-                                __dirname +
-                                    "/../zk-resources/zkey/round-2-contribution_final.zkey"
-                            );
-                        proof = Utils.genSolidityProof(
-                            proof.pi_a,
-                            proof.pi_b,
-                            proof.pi_c
-                        );
-                        proofs.push(proof);
+                        f.push(CommitteeData.data1[i].f[recipientIndex]);
                     }
                 }
+                let round2Contribution = Committee.getRound2Contributions(
+                    recipientIndexes,
+                    recipientPublicKeys,
+                    f,
+                    CommitteeData.data1[i].C
+                );
+                let ciphers = round2Contribution.ciphers;
+                let { proof, publicSignals } = await snarkjs.groth16.fullProve(
+                    round2Contribution.circuitInput,
+                    __dirname +
+                        "/../zk-resources/wasm/round-2-contribution.wasm",
+                    __dirname +
+                        "/../zk-resources/zkey/round-2-contribution_final.zkey"
+                );
+                proof = Utils.genSolidityProof(proof.pi_a, proof.pi_b, proof.pi_c);
                 await this.dkgContract
                     .connect(this.committees[i])
                     .submitRound2Contribution(keyID, [
                         senderIndex,
                         recipientIndexes,
                         ciphers,
-                        proofs,
+                        proof,
                     ]);
             }
             expect(

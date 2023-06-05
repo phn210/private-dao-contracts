@@ -89,7 +89,7 @@ interface IDKG {
         uint8 senderIndex;
         uint8[] recipientIndexes;
         uint256[][] ciphers;
-        bytes[] proofs;
+        bytes proof;
     }
 
     /**

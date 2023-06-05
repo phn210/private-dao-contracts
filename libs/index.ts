@@ -71,9 +71,12 @@ namespace Committee {
         f: BigInt
     ) {
         let encryption = elgamalEncrypt(receiverPublicKey, f);
-
+        let ciphers: Array<BigInt> = [];
+        ciphers.push(encryption.share.u[0]);
+        ciphers.push(encryption.share.u[1]);
+        ciphers.push(encryption.share.c);
         return {
-            share: encryption.share,
+            ciphers: ciphers,
             circuitInput: {
                 receiverIndex: receiverIndex,
                 receiverPublicKey: receiverPublicKey,
@@ -82,6 +85,42 @@ namespace Committee {
                 c: encryption.circuitInput.c,
                 f: f,
                 b: encryption.circuitInput.b,
+            },
+        };
+    }
+
+    export function getRound2Contributions(
+        recipientIndexes: number[],
+        recipientPublicKeys: Array<BigInt[]>,
+        f: Array<BigInt>,
+        C: Array<BigInt[]>
+    ) {
+        let ciphers: Array<BigInt[]> = [];
+        let u: Array<BigInt[]> = [];
+        let c: Array<BigInt> = [];
+        let b: Array<BigInt> = [];
+        for (let i = 0; i < recipientPublicKeys.length; i++) {
+            let encryption = elgamalEncrypt(recipientPublicKeys[i], f[i]);
+            ciphers.push([
+                encryption.share.u[0],
+                encryption.share.u[1],
+                encryption.share.c,
+            ]);
+            u.push(encryption.circuitInput.u);
+            c.push(encryption.circuitInput.c);
+            b.push(encryption.circuitInput.b);
+        }
+
+        return {
+            ciphers: ciphers,
+            circuitInput: {
+                recipientIndexes: recipientIndexes,
+                recipientPublicKeys: recipientPublicKeys,
+                u: u,
+                c: c,
+                C: C,
+                f: f,
+                b: b,
             },
         };
     }

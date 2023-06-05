@@ -201,34 +201,47 @@ contract DKG is IDKG {
                 .round1DataSubmissions[
                     _round2Contribution.recipientIndexes[i] - 1
                 ];
-            publicInputs[0] = _round2Contribution.recipientIndexes[i];
-            publicInputs[1] = recipientSubmission.x[0];
-            publicInputs[2] = recipientSubmission.y[0];
-            for (uint8 j = 0; j < t; j++) {
-                publicInputs[3 + j * 2] = senderSubmission.x[j];
-                publicInputs[3 + j * 2 + 1] = senderSubmission.y[j];
-            }
-            publicInputs[3 + t * 2] = _round2Contribution.ciphers[i][0];
-            publicInputs[3 + t * 2 + 1] = _round2Contribution.ciphers[i][1];
-            publicInputs[3 + t * 2 + 2] = _round2Contribution.ciphers[i][2];
-
-            require(
-                _verifyProof(
-                    round2Verifier,
-                    _round2Contribution.proofs[i],
-                    publicInputs
-                ),
-                "dkgContract: invalid proof"
-            );
-            distributedKey
-                .round2DataSubmissions[_round2Contribution.recipientIndexes[i]]
-                .push(
-                    Round2DataSubmission(
-                        _round2Contribution.senderIndex,
-                        _round2Contribution.ciphers[i]
-                    )
-                );
+            publicInputs[i] = _round2Contribution.recipientIndexes[i];
+            publicInputs[n - 1 + i * 2] = recipientSubmission.x[0];
+            publicInputs[n - 1 + i * 2 + 1] = recipientSubmission.y[0];
+            publicInputs[(n - 1) * 3 + i * 2] = _round2Contribution.ciphers[i][
+                0
+            ];
+            publicInputs[(n - 1) * 3 + i * 2 + 1] = _round2Contribution.ciphers[
+                i
+            ][1];
+            publicInputs[(n - 1) * 5 + i] = _round2Contribution.ciphers[i][2];
         }
+
+        for (uint8 i; i < t; i++) {
+            publicInputs[(n - 1) * 6 + i * 2] = senderSubmission.x[i];
+            publicInputs[(n - 1) * 6 + i * 2 + 1] = senderSubmission.y[i];
+        }
+
+        require(
+            _verifyProof(
+                round2Verifier,
+                _round2Contribution.proof,
+                publicInputs
+            ),
+            "dkgContract: invalid proof"
+        );
+
+        for (
+            uint8 i = 0;
+            i < _round2Contribution.recipientIndexes.length;
+            i++
+        ) {
+            distributedKey
+            .round2DataSubmissions[_round2Contribution.recipientIndexes[i]]
+            .push(
+                Round2DataSubmission(
+                    _round2Contribution.senderIndex,
+                    _round2Contribution.ciphers[i]
+                )
+            );
+        }
+        
 
         distributedKey.round2Counter += 1;
         emit Round2DataSubmitted(msg.sender);
