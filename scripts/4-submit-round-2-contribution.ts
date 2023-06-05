@@ -30,43 +30,42 @@ async function main() {
     let round1DataSubmissions =
         await contracts.dkgContract.getRound1DataSubmissions(keyID);
     let recipientIndexes = [];
-    let ciphers = [];
-    let proofs = [];
+    let recipientPublicKeys = [];
+    let f = [];
     for (let i = 0; i < round1DataSubmissions.length; i++) {
         let round1DataSubmission = round1DataSubmissions[i];
-        let recipientIndex: any = round1DataSubmission.senderIndex;
+        let recipientIndex = round1DataSubmission.senderIndex;
         if (recipientIndex != committeeIndex) {
             recipientIndexes.push(recipientIndex);
             let recipientPublicKeyX = BigInt(round1DataSubmission.x[0]);
             let recipientPublicKeyY = BigInt(round1DataSubmission.y[0]);
-            let round2Contribution = Committee.getRound2Contribution(
-                recipientIndex,
-                [recipientPublicKeyX, recipientPublicKeyY],
-                committeeData.C,
-                // @ts-ignore
-                BigInt(committeeData.f[recipientIndex])
-            );
-            ciphers.push([
-                round2Contribution.share.u[0],
-                round2Contribution.share.u[1],
-                round2Contribution.share.c,
+            recipientPublicKeys.push([
+                recipientPublicKeyX,
+                recipientPublicKeyY,
             ]);
-            let { proof, publicSignals } = await snarkjs.groth16.fullProve(
-                round2Contribution.circuitInput,
-                __dirname + "/../zk-resources/wasm/round-2-contribution.wasm",
-                __dirname +
-                    "/../zk-resources/zkey/round-2-contribution_final.zkey"
-            );
-            proof = Utils.genSolidityProof(proof.pi_a, proof.pi_b, proof.pi_c);
-            proofs.push(proof);
+            // @ts-ignore
+            f.push(BigInt(committeeData.f[recipientIndex]));
         }
-        await contracts.dkgContract.submitRound2Contribution(keyID, [
-            committeeIndex,
-            recipientIndexes,
-            ciphers,
-            proofs,
-        ]);
     }
+    let round2Contribution = Committee.getRound2Contributions(
+        recipientIndexes,
+        recipientPublicKeys,
+        f,
+        committeeData.C
+    );
+    let ciphers = round2Contribution.ciphers;
+    let { proof, publicSignals } = await snarkjs.groth16.fullProve(
+        round2Contribution.circuitInput,
+        __dirname + "/../zk-resources/wasm/round-2-contribution.wasm",
+        __dirname + "/../zk-resources/zkey/round-2-contribution_final.zkey"
+    );
+    proof = Utils.genSolidityProof(proof.pi_a, proof.pi_b, proof.pi_c);
+    await contracts.dkgContract.submitRound2Contribution(keyID, [
+        committeeIndex,
+        recipientIndexes,
+        ciphers,
+        proof,
+    ]);
 }
 
 main().then(() => {

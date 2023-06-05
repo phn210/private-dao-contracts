@@ -32,7 +32,7 @@ async function main() {
     let y = [];
     for (let i = 0; i < t; i++) {
         x.push(committeeData.C[i][0]);
-        y.push(committeeData.C[i][0]);
+        y.push(committeeData.C[i][1]);
     }
     await contracts.dkgContract.submitRound1Contribution(keyID, [x, y]);
 }
