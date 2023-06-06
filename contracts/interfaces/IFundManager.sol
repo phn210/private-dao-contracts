@@ -117,8 +117,6 @@ interface IFundManager {
 
     function isCommittee(address _sender) external view returns (bool);
 
-    function isWhitelistedDAO(address _sender) external view returns (bool);
-
     function isFounder(address _sender) external view returns (bool);
 
     function getDKGParams() external view returns (uint8, uint8);

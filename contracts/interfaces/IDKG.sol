@@ -154,7 +154,7 @@ interface IDKG {
 
     modifier onlyCommittee() virtual;
 
-    modifier onlyWhitelistedDAO() virtual;
+    // modifier onlyWhitelistedDAO() virtual;
 
     /*================== EXTERNAL FUNCTION ==================*/
 

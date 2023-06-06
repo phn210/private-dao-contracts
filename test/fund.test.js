@@ -86,6 +86,13 @@ describe("Test Funding Flow", () => {
             this.resultVerifierDim3.address,
         ];
 
+        let DAOManager = await ethers.getContractFactory(
+            "DAOManager",
+            this.founder
+        );
+
+        this.daoManager = await DAOManager.deploy();
+
         let FundManager = await ethers.getContractFactory(
             "FundManager",
             this.founder
@@ -93,6 +100,7 @@ describe("Test Funding Flow", () => {
         mineBlocks(1);
         this.fundManager = await FundManager.deploy(
             committeeList,
+            this.daoManager.address,
             0,
             merkleTreeConfig,
             fundingRoundConfig,
@@ -103,9 +111,9 @@ describe("Test Funding Flow", () => {
             "DKG",
             await this.fundManager.dkgContract()
         );
-        for (let i = 0; i < this.daos.length; i++) {
-            await this.fundManager.addWhitelistedDAO(this.daos[i].address);
-        }
+
+        await this.daoManager.setFundManager(this.fundManager.address);
+        await this.daoManager.setDKG(this.dkgContract.address);
     });
     describe("Test DKG", (async) => {
         it("Generate Funding Distributed Key", async () => {

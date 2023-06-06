@@ -52,13 +52,13 @@ contract DKG is IDKG {
         _;
     }
 
-    modifier onlyWhitelistedDAO() override {
-        require(
-            IFundManager(owner).isWhitelistedDAO(msg.sender),
-            "dkgContract: msg.sender is not whitelisted DAO"
-        );
-        _;
-    }
+    // modifier onlyWhitelistedDAO() override {
+    //     require(
+    //         IFundManager(owner).isWhitelistedDAO(msg.sender),
+    //         "dkgContract: msg.sender is not whitelisted DAO"
+    //     );
+    //     _;
+    // }
 
     function generateDistributedKey(
         uint8 _dimension,
@@ -250,12 +250,13 @@ contract DKG is IDKG {
         }
     }
 
+    // FIXME add checking whitelisted DAO later
     function startTallying(
         bytes32 _requestID,
         uint256 _distributedKeyID,
         uint256[][] memory _R,
         uint256[][] memory _M
-    ) external override onlyWhitelistedDAO {
+    ) external override {
         TallyTracker storage tallyTracker = tallyTrackers[_requestID];
         require(
             tallyTracker.contributionVerifier == address(0) &&

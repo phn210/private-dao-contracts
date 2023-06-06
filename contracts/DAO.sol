@@ -9,6 +9,8 @@ import "./libs/MerkleTree.sol";
 import "./FundManager.sol";
 
 contract DAO is IDAO, IDKGRequest {
+    uint256 internal constant Q =
+        0x30644E72E131A029B85045B68181585D2833E84879B9709143E1F593F0000001;
     // Used to read proposals data
     uint256 internal constant PROPOSAL_STORAGE_SIZE = 6;
 
@@ -108,6 +110,7 @@ contract DAO is IDAO, IDKGRequest {
     function propose(Action[] calldata actions, bytes32 descriptionHash) external override returns (uint256) {
         
         uint256 proposalId = hashProposal(actions, descriptionHash);
+        proposalIds[proposalCount] = proposalId;
         Proposal storage newProposal = proposals[proposalId];
         
         // Check new proposal has  not exist
@@ -142,10 +145,8 @@ contract DAO is IDAO, IDKGRequest {
         Request storage request = requests[requestId];
         request.distributedKeyID = distributedKeyId;
         for (uint8 i; i < dimension; i++) {
-            request.R[i][0] = 0;
-            request.R[i][1] = 1;
-            request.M[i][0] = 0;
-            request.M[i][1] = 1;
+            request.R.push([0, 1]);
+            request.M.push([0, 1]);
         }
 
         emit ProposalCreated(
@@ -420,7 +421,7 @@ contract DAO is IDAO, IDKGRequest {
         Action[] calldata actions,
         bytes32 descriptionHash
     ) public pure returns (uint256) {
-        return uint256(keccak256(abi.encode(actions, descriptionHash)));
+        return uint256(keccak256(abi.encode(actions, descriptionHash))) % Q;
     }
 
     /**
@@ -634,4 +635,6 @@ contract DAO is IDAO, IDKGRequest {
 
         return returnData;
     }
+
+    receive() external payable {}
 }

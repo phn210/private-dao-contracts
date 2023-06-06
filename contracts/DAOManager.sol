@@ -27,14 +27,9 @@ contract DAOManager is IDAOFactory {
         _;
     }
 
-    constructor(
-        address _admin,
-        address _dkg,
-        uint256 _distributedKeyId
-    ) {
-        admin = _admin;
-        dkg = IDKG(_dkg);
-        distributedKeyId = _distributedKeyId;
+    // FIXME
+    constructor() {
+        admin = msg.sender;
     }
 
     function setAdmin(address _admin) external onlyAdmin {
@@ -43,6 +38,14 @@ contract DAOManager is IDAOFactory {
 
     function setFundManager(address _fundManager) external onlyAdmin {
         fundManager = IFundManager(_fundManager);
+    }
+
+    function setDKG(address _dkg) external onlyAdmin {
+        dkg = IDKG(_dkg);
+    }
+
+    function setDistributedKeyId(uint256 _distributedKeyId) external onlyAdmin {
+        distributedKeyId = _distributedKeyId;
     }
 
     function createDAO(IDAO.Config calldata config) external payable override returns (uint256 daoId) {
@@ -68,6 +71,8 @@ contract DAOManager is IDAOFactory {
         ++daoCounter;
 
         deposits[newDAO] = msg.value;
+
+        _applyForFunding(newDAO);
     }
 
     function applyForFunding() external {

@@ -21,7 +21,7 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
     uint256 public bounty;
 
     mapping(address => bool) public override isCommittee;
-    mapping(address => bool) public override isWhitelistedDAO;
+    // mapping(address => bool) public override isWhitelistedDAO;
 
     mapping(bytes32 => Request) public requests;
     mapping(uint256 => FundingRound) public fundingRounds;
@@ -57,7 +57,7 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
         }
         numberOfCommittees = (uint8)(_committeeList.length);
         threshold = numberOfCommittees / 2 + 1;
-        isWhitelistedDAO[address(this)] = true;
+        // isWhitelistedDAO[address(this)] = true;
         reserveFactor = _reserveFactor;
         config = _fundingRoundConfig;
         fundingRoundQueue = new Queue(15);
@@ -396,11 +396,5 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
                 [proof[6], proof[7]],
                 _publicInputs
             );
-    }
-
-    /*=================== FOR TEST REASON ===================*/
-
-    function addWhitelistedDAO(address _dao) external onlyFounder onlyDKG {
-        isWhitelistedDAO[_dao] = true;
     }
 }
