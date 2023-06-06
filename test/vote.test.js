@@ -21,7 +21,7 @@ describe("Test DAO Flows", () => {
         let committeeList = [];
         this.fundingKeyId = "";
         this.votingKeyId = "";
-        this.tree = Tree.getPoseidonHashTree();
+        this.tree = Tree.getPoseidonHashTree(20);
         this.votingNullifiers = [];
 
         for (let i = 0; i < n; i++) {

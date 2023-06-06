@@ -27,6 +27,6 @@ namespace Tree {
     export function getDefaultTree(): MerkleTree {
         return new MerkleTree(12);
     }
-// }
+}
 
-// export default Tree;
+export default Tree;
