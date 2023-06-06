@@ -15,12 +15,13 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
     uint8 public numberOfCommittees;
     uint8 public threshold;
     bool public fundingRoundInProgress;
+    address public daoManager;
     uint256 public reserveFactor;
     FundingRoundConfig public config;
     uint256 public bounty;
 
     mapping(address => bool) public override isCommittee;
-    mapping(address => bool) public override isWhitelistedDAO;
+    // mapping(address => bool) public override isWhitelistedDAO;
 
     mapping(bytes32 => Request) public requests;
     mapping(uint256 => FundingRound) public fundingRounds;
@@ -31,6 +32,7 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
 
     constructor(
         address[] memory _committeeList,
+        address _daoManager,
         uint256 _reserveFactor,
         MerkleTreeConfig memory _merkleTreeConfig,
         FundingRoundConfig memory _fundingRoundConfig,
@@ -45,14 +47,17 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
             _committeeList.length >= 5,
             "FundManager contract: Require the number of committees greater than 5"
         );
+        require(_daoManager != address(0), "FundManager: DAOManager can not be address 0");
+
         founder = msg.sender;
+        daoManager = _daoManager;
 
         for (uint256 i = 0; i < _committeeList.length; i++) {
             isCommittee[_committeeList[i]] = true;
         }
         numberOfCommittees = (uint8)(_committeeList.length);
         threshold = numberOfCommittees / 2 + 1;
-        isWhitelistedDAO[address(this)] = true;
+        // isWhitelistedDAO[address(this)] = true;
         reserveFactor = _reserveFactor;
         config = _fundingRoundConfig;
         fundingRoundQueue = new Queue(15);
@@ -71,8 +76,8 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
         _;
     }
 
-    modifier onlyWhitelistedDAO() override {
-        require(isWhitelistedDAO[msg.sender]);
+    modifier onlyDAOManager() override {
+        require(msg.sender == daoManager);
         _;
     }
 
@@ -83,10 +88,10 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
 
     /*================== EXTERNAL FUNCTION ==================*/
 
-    function applyForFunding() external override onlyWhitelistedDAO {
-        fundingRoundQueue.enqueue(msg.sender);
+    function applyForFunding(address _dao) external override onlyDAOManager {
+        fundingRoundQueue.enqueue(_dao);
 
-        emit FundingRoundApplied(msg.sender);
+        emit FundingRoundApplied(_dao);
     }
 
     function launchFundingRound(
@@ -391,11 +396,5 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
                 [proof[6], proof[7]],
                 _publicInputs
             );
-    }
-
-    /*=================== FOR TEST REASON ===================*/
-
-    function addWhitelistedDAO(address _dao) external onlyFounder {
-        isWhitelistedDAO[_dao] = true;
     }
 }

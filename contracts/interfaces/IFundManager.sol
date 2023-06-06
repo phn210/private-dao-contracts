@@ -85,11 +85,11 @@ interface IFundManager {
 
     modifier onlyCommittee() virtual;
 
-    modifier onlyWhitelistedDAO() virtual;
+    modifier onlyDAOManager() virtual;
 
     /*================== EXTERNAL FUNCTION ==================*/
 
-    function applyForFunding() external;
+    function applyForFunding(address dao) external;
 
     function launchFundingRound(
         uint256 _distributedKeyID
@@ -116,8 +116,6 @@ interface IFundManager {
     function getFundingRoundQueueLength() external view returns (uint256);
 
     function isCommittee(address _sender) external view returns (bool);
-
-    function isWhitelistedDAO(address _sender) external view returns (bool);
 
     function isFounder(address _sender) external view returns (bool);
 

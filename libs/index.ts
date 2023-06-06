@@ -78,8 +78,8 @@ namespace Committee {
         return {
             ciphers: ciphers,
             circuitInput: {
-                receiverIndex: receiverIndex,
-                receiverPublicKey: receiverPublicKey,
+                recipientIndex: receiverIndex,
+                recipientPublicKey: receiverPublicKey,
                 C: C,
                 u: encryption.circuitInput.u,
                 c: encryption.circuitInput.c,
