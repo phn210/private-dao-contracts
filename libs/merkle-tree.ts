@@ -8,8 +8,8 @@ import Poseidon from "./poseideon-hash";
 import MiMC from "./mimc-hash";
 
 namespace Tree {
-    export function getPoseidonHashTree(): MerkleTree {
-        const tree: MerkleTree = new MerkleTree(12, [], {
+    export function getPoseidonHashTree(levels: number): MerkleTree {
+        const tree: MerkleTree = new MerkleTree(levels, [], {
             hashFunction: Poseidon.hashLeftRight,
             zeroElement:
                 "1117582952394327218264374806630104116016694857615943107127336590235748983513",
@@ -17,8 +17,8 @@ namespace Tree {
         return tree;
     }
 
-    export function getMiMCHashTree(): MerkleTree {
-        const tree: MerkleTree = new MerkleTree(12, [], {
+    export function getMiMCHashTree(levels: number): MerkleTree {
+        const tree: MerkleTree = new MerkleTree(levels, [], {
             hashFunction: MiMC.hashLeftRight,
             zeroElement: MiMC.hashLeftRight(0, 0),
         });
