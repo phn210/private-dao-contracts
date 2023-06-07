@@ -6,6 +6,7 @@ import { deploy } from "../1-deploy-with-check";
 import { CommitteeData } from "../../test/data";
 import { Committee } from "../../libs/index";
 import { Utils } from "../../libs/utils";
+import { getFundedValue } from "../constants/funded";
 
 async function main() {
     const { _, $, t, n, config } = await deploy(false);
@@ -52,7 +53,15 @@ async function main() {
     let resultVector = Committee.getResultVector(listIndex, D, M);
 
     // Should brute force resultVector to get result
-    let result = [0n, 0n, 0n];
+    let result = [20000000000000000n, 20000000000000000n, 10000000000000000n];
+    // if (false) {
+    //     for(let i = 0; i < $.voters.length; i++) {
+    //         const funded = getFundedValue(_.FundManager.address.toLowerCase(), $.voters[i].address.toLowerCase())
+    //         result.map(dim => {
+
+    //         })
+    //     }
+    // }
     let { proof, publicSignals } = await snarkjs.groth16.fullProve(
         { listIndex: listIndex, D: D, M: M, result: result },
         path.join(path.resolve(), '/zk-resources/wasm/result-verifier_dim3.wasm'),

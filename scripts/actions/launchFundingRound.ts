@@ -6,15 +6,15 @@ async function main() {
     const keyID = 2;
 
     const fundingRoundID = await _.FundManager.fundingRoundCounter();
-    console.log(fundingRoundID);
-    // await _.FundManager.launchFundingRound(keyID);
+    
+    await _.FundManager.launchFundingRound(keyID);
+    console.log("Launched funding round", fundingRoundID);
+    console.log(
+        "FundingRoundState:",
+        await _.FundManager.getFundingRoundState(fundingRoundID)
+    );
 
-    // console.log(
-    //     "FundingRoundState:",
-    //     await _.FundManager.getFundingRoundState(fundingRoundID)
-    // );
-
-    // console.log("FundingRound:", await _.FundManager.fundingRounds(fundingRoundID));
+    console.log("FundingRound:", await _.FundManager.fundingRounds(fundingRoundID));
 }
 
 main().then(() => {

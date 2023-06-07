@@ -41,7 +41,13 @@ const config: HardhatUserConfig = {
             accounts: process.env.KEYS?.split(" "),
             chainId: chainIds.goerli,
             url: "https://rpc.ankr.com/eth_goerli",
-            gas: 6000000
+            gas: 1200000
+        },
+        sepolia: {
+            accounts: process.env.KEYS?.split(" "),
+            chainId: chainIds.sepolia,
+            url: "https://rpc.sepolia.org",
+            gas: 2000000
         },
     },
     solidity: {

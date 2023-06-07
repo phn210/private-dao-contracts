@@ -26,9 +26,27 @@ export const ADDRESSES: { [key: string]: { [key: string]: string } } = {
         // FundManager: "0x68Deab74A4f047C893E3b1A538386fE486604984",
         // DAOManager: "0x189a23A0C0B8b4b4211F8e99cd7B54C20ffA4048",
         // DKG: "0x10C2642F2eB0be316E5364C2deFCC22dDa96Ba3C"
-        FundManager: "0x75861AB1b6bE866E6Dda0ced5F1B0a8DE0B969F6",
-        DAOManager: "0x972Da9deCE723E9E0e716Aad7121c6A59C0FaBba",
-        DKG: "0x93Ddcf2C8538827B15045c9e0261f4c040bCb34e"
+        // FundManager: "0x75861AB1b6bE866E6Dda0ced5F1B0a8DE0B969F6",
+        // DAOManager: "0x972Da9deCE723E9E0e716Aad7121c6A59C0FaBba",
+        // DKG: "0x93Ddcf2C8538827B15045c9e0261f4c040bCb34e",
+        FundManager: "0x4F552c423b7Fa28A889E07096B1131FBAd350d51",
+        DAOManager: "0xd95B22DAeb060E2Ab68b319aacb94DE1899C210E",
+        DKG: "0xe22f737AB1bc03Ce6CB701C3a2Ec1D324cc4DA58",
+        QUEUE: "0xCC8c42d6E4da920Ab053d1beE91064b4c80e1797"
+    },
+    "11155111": {
+        Round2ContributionVerifier:"0x0204133D60c28d539802b8fa8b0D4b30f6D0Ca4A",
+        FundingVerifierDim3: "0x109D82Fa17F773155668a5F34e9b40416ef5Cb45",
+        VotingVerifierDim3: "0x8E73fA58138bA142b821A3f4A54c2a70d71445BB",
+        TallyContributionVerifierDim3: "0x365b1ec961fd5DC748Bbb36fa5FF74294Ac23712",
+        ResultVerifierDim3: "0xFe712985329d5683471F0eAb21D3C0E109bBA6D5",
+        PoseidonUnit2: "0x802eC44fA784F2bac33725729AF22b07EEAddeF0",
+        Poseidon: "0x8864267084CA3B080e9087EB5C8c7F8d552099a5",
+        FundManager: "0x119cA4DBdC5E30749b85A6eDcB3A0C99444e6062",
+        DAOManager: "0x942Ce1A60117a2eF9Aed65C2F4b2b6aba0998F87",
+        DKG: "0x17d18135Acd0cA60d0D0d3687C852e84c2230b3a",
+        QUEUE: "0x835247c8C195350e48cdb4b5A026D397BEC04d80",
+        DAO: "",
     }
 };
 

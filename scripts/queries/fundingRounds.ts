@@ -3,7 +3,9 @@ import { deploy } from "../1-deploy-with-check";
 async function main() {
     const { _, $, t, n, config } = await deploy(false);
 
-    const fundingRoundIds = [1];
+    console.log("Funding round counter", await _.FundManager.fundingRoundCounter());
+    console.log("Number of DAOs in applied queue", await _.QUEUE.getLength());
+    const fundingRoundIds = [0];
 
     for(let i = 0; i < fundingRoundIds.length; i++) {
         console.log("Funding Round", fundingRoundIds[i]);

@@ -10,16 +10,17 @@ import { Utils } from "../../libs/utils";
 async function main() {
     const { _, $, t, n, config } = await deploy(false);
 
-    const committeeIndexes = [1, 2, 3, 4, 5];
+    const committeeIndexes = [4, 5];
     const fundingRoundID = 0;
-    const keyID = 0;
+    const keyID = 2;
 
     console.log(
         `Funding Round ${fundingRoundID} State:`,
         await _.FundManager.getFundingRoundState(fundingRoundID)
     );
 
-    await _.FundManager.startTallying(fundingRoundID);
+    // await _.FundManager.startTallying(fundingRoundID);
+    // console.log('Funding round is tallying');
     
     for (let i = 0; i < committeeIndexes.length; i++) {
         let committeeIndex = committeeIndexes[i];
@@ -32,12 +33,14 @@ async function main() {
             fundingRoundID
         );
         let requestID = fundingRound.requestID;
+        console.log(requestID);
         console.log(
             "TallyTracker state:",
             await _.DKG.getTallyTrackerState(requestID)
         );
 
         let tmp = await _.DKG.getR(requestID);
+        console.log(tmp);
         let R = [];
         for (let i = 0; i < tmp.length; i++) {
             R.push([BigInt(tmp[i][0]), BigInt(tmp[i][1])]);
@@ -48,36 +51,38 @@ async function main() {
                 keyID,
                 committeeIndex
             );
-        console.log(round2DataSubmissions);
-        // let senderIndexes = [];
-        // let u = [];
-        // let c = [];
-        // for (let i = 0; i < n; i++) {
-        //     senderIndexes.push(round2DataSubmissions[i].senderIndex);
-        //     u.push([
-        //         BigInt(round2DataSubmissions[i].ciphers[0]),
-        //         BigInt(round2DataSubmissions[i].ciphers[1]),
-        //     ]);
-        //     c.push(BigInt(round2DataSubmissions[i].ciphers[2]));
-        // }
-        // let tallyContribution = Committee.getTallyContribution(
-        //     committeeData.a0,
-        //     committeeData.secret["f(i)"],
-        //     u,
-        //     c,
-        //     R
-        // );
-        // let { proof, publicSignals } = await snarkjs.groth16.fullProve(
-        //     tallyContribution.circuitInput,
-        //     path.join(path.resolve(), '/zk-resources/wasm/tally-contribution_dim3.wasm'),
-        //     path.join(path.resolve(), '/zk-resources/zkey/tally-contribution_dim3_final.zkey')
-        // );
-        // proof = Utils.genSolidityProof(proof.pi_a, proof.pi_b, proof.pi_c);
-        // await _.DKG.connect(committee).submitTallyContribution(requestID, [
-        //     committeeIndex,
-        //     tallyContribution.D,
-        //     proof,
-        // ], {gasLimit: 3000000});
+        
+        let senderIndexes = [];
+        let u = [];
+        let c = [];
+        for (let i = 0; i < n-1; i++) {
+            senderIndexes.push(round2DataSubmissions[i][0]);
+            u.push([
+                BigInt(round2DataSubmissions[i].ciphers[0]),
+                BigInt(round2DataSubmissions[i].ciphers[1]),
+            ]);
+            c.push(BigInt(round2DataSubmissions[i].ciphers[2]));
+        }
+        let tallyContribution = Committee.getTallyContribution(
+            committeeData.a0,
+            committeeData.secret["f(i)"],
+            u,
+            c,
+            R
+        );
+        console.log(Utils.logFullObject(tallyContribution.circuitInput))
+        let { proof, publicSignals } = await snarkjs.groth16.fullProve(
+            tallyContribution.circuitInput,
+            path.join(path.resolve(), '/zk-resources/wasm/tally-contribution_dim3.wasm'),
+            path.join(path.resolve(), '/zk-resources/zkey/tally-contribution_dim3_final.zkey')
+        );
+        proof = Utils.genSolidityProof(proof.pi_a, proof.pi_b, proof.pi_c);
+        await _.DKG.connect(committee).submitTallyContribution(requestID, [
+            committeeIndex,
+            tallyContribution.D,
+            proof,
+        ]);
+        console.log(`Committee member ${i} contributed to tally process`);
     }
 }
 

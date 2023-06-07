@@ -9,8 +9,8 @@ import { Utils } from "../../libs/utils";
 async function main() {
     const { _, $, t, n, config } = await deploy(false);
 
-    const fundingRoundID = 1;
-    const keyID = 0;
+    const fundingRoundID = 0;
+    const keyID = 2;
     // in ETH
     const fundingAmount = '0.01';
     const fundingValue = BigInt(Number(ethers.utils.parseEther(fundingAmount)));

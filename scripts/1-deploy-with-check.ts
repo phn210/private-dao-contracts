@@ -10,8 +10,8 @@ export async function deploy(logging: boolean) {
 
     let config = {
         merkleTreeDepth: 20,
-        fundingRoundConfig: [3, 40, 30],
-        daoConfig: [3, 40, 30, 3, 3]
+        fundingRoundConfig: [10, 60, 60],
+        daoConfig: [10, 60, 60, 10, 10]
     };
 
     let accounts = await ethers.getSigners();
@@ -36,7 +36,7 @@ export async function deploy(logging: boolean) {
                 genPoseidonP2Contract.createCode(),
                 owner
             );
-            if (name == "DAO") return await ethers.getContractAt(
+            if (name == "DAO" || name == "Mock") return await ethers.getContractAt(
                 name,
                 "0x0000000000000000000000000000000000000000",
                 owner
@@ -189,9 +189,17 @@ export async function deploy(logging: boolean) {
     let dkg = await ethers.getContractAt("DKG", dkgAddress);
     if (logging) console.log('DKG:', dkg.address);
 
+    let queueAddress = await fundManager.fundingRoundQueue();
+
+    // Deploy DKG contract
+    let queue = await ethers.getContractAt("Queue", queueAddress);
+    if (logging) console.log('QUEUE:', queue.address);
+
     // await daoManager.setFundManager(fundManager.address);
+    // console.log("Set FundManager for DAOManager contract");
 
     // await daoManager.setDKG(dkg.address);
+    // console.log("Set DKG for DAOManager contract");
 
     let DAO = await getContract("DAO");
     let dao = await (async (contract, name, init: any = []) => {
@@ -206,6 +214,19 @@ export async function deploy(logging: boolean) {
         }
     })(DAO, "DAO");
 
+    let Mock = await getContract("Mock");
+    let mock = await (async (contract, name, init: any = []) => {
+        if (contract instanceof ethers.Contract) {
+            if (logging) console.log(`${name} (EXISTED):`, contract.address);
+            return contract;
+        }
+        else {
+            let ct = await contract.deploy(...init);
+            if (logging) console.log(`${name} (NEW):`, ct.address);
+            return ct;
+        }
+    })(Mock, "Mock");
+
     console.log("DEPLOYING DONE!");
 
     return {
@@ -218,8 +239,10 @@ export async function deploy(logging: boolean) {
             Poseidon: poseidon,
             FundManager: fundManager,
             DAOManager: daoManager,
+            QUEUE: queue,
             DKG: dkg,
-            DAO: dao
+            DAO: dao,
+            Mock: mock
         },
         $: {
             deployer: owner,
