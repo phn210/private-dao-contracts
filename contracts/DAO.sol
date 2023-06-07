@@ -42,7 +42,7 @@ contract DAO is IDAO, IDKGRequest {
     mapping(bytes32 => Request) public requests;
 
     // Record of nullifier hashes of proposals for preventing double-voting
-    mapping(uint256 => mapping(uint256 => bool)) nullifierHashes;
+    mapping(uint256 => mapping(uint256 => bool)) public nullifierHashes;
 
     // Queue for timelock
     mapping(bytes32 => bool) public queuedTransactions;
@@ -322,8 +322,8 @@ contract DAO is IDAO, IDKGRequest {
     function queue(Action[] calldata actions, bytes32 descriptionHash) external override {
         uint256 proposalId = hashProposal(actions, descriptionHash);
         require(
-            state(proposalId) == ProposalState.Tallying,
-            "DAO::queue: Oroposal has not been finalized yet"
+            state(proposalId) == ProposalState.Succeeded,
+            "DAO::queue: Proposal has not been finalized yet"
         );
 
         Proposal storage proposal = proposals[proposalId];
@@ -356,7 +356,7 @@ contract DAO is IDAO, IDKGRequest {
         );
 
         Proposal storage proposal = proposals[proposalId];
-        uint256 eta = block.number + config.timelockPeriod;
+        uint256 eta = proposal.eta;
 
         for (uint256 i = 0; i < actions.length; i++) {
             _executeTransaction(
@@ -367,9 +367,9 @@ contract DAO is IDAO, IDKGRequest {
                 eta
             );
         }
-        proposal.eta = eta;
+        proposal.executed = true;
 
-        emit ProposalQueued(proposalId, eta);
+        emit ProposalExecuted(proposalId);
     }
 
     /**
@@ -464,7 +464,7 @@ contract DAO is IDAO, IDKGRequest {
         } else if (proposal.executed) {
             return ProposalState.Executed;
         } else if (
-            block.timestamp >= (proposal.eta + daoConfig.queuingPeriod)
+            block.number >= (proposal.eta + daoConfig.queuingPeriod)
         ) {
             return ProposalState.Expired;
         } else {

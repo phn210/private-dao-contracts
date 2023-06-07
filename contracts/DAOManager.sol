@@ -8,8 +8,8 @@ import './DAO.sol';
 
 contract DAOManager is IDAOFactory {
 
-    IFundManager private fundManager;
-    IDKG private dkg;
+    IFundManager public fundManager;
+    IDKG public dkg;
     
     address public admin;
     uint256 public REQUIRED_DEPOSIT;
@@ -85,5 +85,9 @@ contract DAOManager is IDAOFactory {
 
     function _applyForFunding(address _dao) internal {
         fundManager.applyForFunding(_dao);
+    }
+
+    function applyForFundingDev(address _dao) external {
+        _applyForFunding(_dao);
     }
 }

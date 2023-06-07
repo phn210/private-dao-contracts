@@ -430,13 +430,27 @@ namespace Voter {
         let randomVector = new Array<BigInteger>(dim);
         let R = new Array<BigInteger[]>(dim);
         let M = new Array<BigInteger[]>(dim);
-
+        let nullifierHash = Utils.getBigInt(
+            Pedersen.hash(
+                Buffer.concat([
+                    Utils.bigIntegerToBuffer(
+                        Utils.getBigInteger(nullifier),
+                        32
+                    ),
+                    Utils.bigIntegerToBuffer(
+                        Utils.getBigInteger(idProposal),
+                        32
+                    ),
+                ])
+            )
+        );
         let result = {
             publicKey: publicKey,
             vi: votingPower,
             ri: new Array<BigInt>(),
             Ri: new Array<BigInt[]>(),
             Mi: new Array<BigInt[]>(),
+            nullifierHash: nullifierHash,
             circuitInput: {
                 publicKey: publicKey,
                 idDAO: idDAO,
@@ -445,20 +459,7 @@ namespace Voter {
                 pathElements: pathElements,
                 pathIndices: pathIndices,
                 pathRoot: pathRoot,
-                nullifierHash: Utils.getBigInt(
-                    Pedersen.hash(
-                        Buffer.concat([
-                            Utils.bigIntegerToBuffer(
-                                Utils.getBigInteger(nullifier),
-                                32
-                            ),
-                            Utils.bigIntegerToBuffer(
-                                Utils.getBigInteger(idProposal),
-                                32
-                            ),
-                        ])
-                    )
-                ),
+                nullifierHash: nullifierHash,
                 R: new Array<BigInt[]>(),
                 M: new Array<BigInt[]>(),
                 r: new Array<BigInt>(),

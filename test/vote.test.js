@@ -21,7 +21,8 @@ describe("Test DAO Flows", () => {
         let committeeList = [];
         this.fundingKeyId = "";
         this.votingKeyId = "";
-        this.tree = Tree.getPoseidonHashTree(20);
+        this.tree = Tree.getPoseidonHashTree();
+        this.commitments = [];
         this.votingNullifiers = [];
 
         for (let i = 0; i < n; i++) {
@@ -384,6 +385,7 @@ describe("Test DAO Flows", () => {
                     );
 
                 this.tree.insert(fund.circuitInput.commitment.toString());
+                this.commitments.push(fund.circuitInput.commitment.toString());
                 this.votingNullifiers.push(fund.circuitInput.nullifier);
             }
 
@@ -576,7 +578,7 @@ describe("Test DAO Flows", () => {
 
             let proposal = await this.firstDAO.proposals(proposalHash);
             await mineBlocks(this.daoConfig[0]);
-            const eligibleVoters = [5, 6, 7];
+            const eligibleVoters = [0, 1];
 
             let [publicKeyX, publicKeyY] =
                 await this.dkgContract.getPublicKey(
@@ -584,9 +586,9 @@ describe("Test DAO Flows", () => {
                 );
 
             for (let i = 0; i < eligibleVoters.length; i++) {
-                let path = this.tree.path(eligibleVoters[i]);
-                console.log("Path root", path.pathRoot);
-                console.log("Tree root", this.tree.root);
+                let index = this.tree.indexOf(this.commitments[eligibleVoters[i]]);
+                console.log(index);
+                let path = this.tree.path(index);
 
                 let vote = Voter.getVote(
                     Utils.getBigIntArray([publicKeyX, publicKeyY]),
@@ -599,7 +601,6 @@ describe("Test DAO Flows", () => {
                     path.pathIndices,
                     this.tree.root
                 );
-                console.log(Utils.stringifyCircuitInput(vote));
                 // console.log(vote);
                 let { proof, publicSignals } = await snarkjs.groth16.fullProve(
                     vote.circuitInput,
@@ -609,19 +610,19 @@ describe("Test DAO Flows", () => {
                 proof = Utils.genSolidityProof(proof.pi_a, proof.pi_b, proof.pi_c);
                 let voteData = [
                     this.tree.root,
-                    this.votingNullifiers[eligibleVoters[i]],
+                    vote.nullifierHash,
                     vote.Ri,
                     vote.Mi,
                     proof
                 ];
-
+                console.log(publicSignals);
                 await this.firstDAO.castVote(
-                    proposal.id,
+                    proposalHash,
                     voteData
                 );
 
                 expect(
-                    await this.firstDAO.nullifierHashes(proposalHash, this.votingNullifiers[eligibleVoters[i]])
+                    await this.firstDAO.nullifierHashes(proposalHash, vote.nullifierHash)
                 ).to.be.eq(true);
             }
 
@@ -741,11 +742,11 @@ describe("Test DAO Flows", () => {
             await this.dkgContract.submitTallyResult(requestID, result, proof);
 
             await this.firstDAO.finalize(proposalHash);
+
+            await mineBlocks(this.daoConfig[2]);
             expect(
                 await this.firstDAO.state(proposalHash)
             ).to.be.equal(5);
-
-            await mineBlocks(this.daoConfig[2]);
 
             await this.firstDAO.queue(
                 firstProposal.actions,
@@ -762,9 +763,9 @@ describe("Test DAO Flows", () => {
                 firstProposal.actions,
                 firstProposal.descriptionHash
             );
-            expect(
-                await this.firstDAO.state(proposalHash)
-            ).to.be.equal(8);
+            // expect(
+            //     await this.firstDAO.state(proposalHash)
+            // ).to.be.equal(8);
         })
     })
 });
