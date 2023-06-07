@@ -34,10 +34,14 @@ const config: HardhatUserConfig = {
             chainId: chainIds.hardhat,
             blockGasLimit: 1000000000,
         },
+        localhost: {
+            chainId: 31337
+        },
         goerli: {
             accounts: process.env.KEYS?.split(" "),
             chainId: chainIds.goerli,
-            url: "https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
+            url: "https://rpc.ankr.com/eth_goerli",
+            gas: 6000000
         },
     },
     solidity: {
