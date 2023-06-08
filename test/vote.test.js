@@ -4,7 +4,7 @@ const genPoseidonP2Contract = require("circomlibjs/src/poseidon_gencontract");
 const snarkjs = require("snarkjs");
 const { Committee, Voter } = require("../libs/index");
 const { Utils } = require("../libs/utils");
-const Tree = require("../libs/merkle-tree");
+const { Tree } = require("../libs/merkle-tree");
 const { VoterData, CommitteeData } = require("./data");
 
 var dim = 3;
@@ -21,7 +21,7 @@ describe("Test DAO Flows", () => {
         let committeeList = [];
         this.fundingKeyId = "";
         this.votingKeyId = "";
-        this.tree = Tree.getPoseidonHashTree();
+        this.tree = Tree.getPoseidonHashTree(20);
         this.commitments = [];
         this.votingNullifiers = [];
 
@@ -122,7 +122,7 @@ describe("Test DAO Flows", () => {
         await this.daoManager.setDKG(this.dkgContract.address);
     });
 
-    describe("Test DKG", async() => {
+    describe("Test DKG", async () => {
         it("Generate Funding Distributed Key", async () => {
             let keyID = await this.dkgContract.distributedKeyCounter();
             this.fundingKeyId = keyID;
@@ -199,7 +199,11 @@ describe("Test DAO Flows", () => {
                     __dirname +
                         "/../zk-resources/zkey/round-2-contribution_final.zkey"
                 );
-                proof = Utils.genSolidityProof(proof.pi_a, proof.pi_b, proof.pi_c);
+                proof = Utils.genSolidityProof(
+                    proof.pi_a,
+                    proof.pi_b,
+                    proof.pi_c
+                );
                 await this.dkgContract
                     .connect(this.committees[i])
                     .submitRound2Contribution(keyID, [
@@ -290,7 +294,11 @@ describe("Test DAO Flows", () => {
                     __dirname +
                         "/../zk-resources/zkey/round-2-contribution_final.zkey"
                 );
-                proof = Utils.genSolidityProof(proof.pi_a, proof.pi_b, proof.pi_c);
+                proof = Utils.genSolidityProof(
+                    proof.pi_a,
+                    proof.pi_b,
+                    proof.pi_c
+                );
                 await this.dkgContract
                     .connect(this.committees[i])
                     .submitRound2Contribution(keyID, [
@@ -309,20 +317,18 @@ describe("Test DAO Flows", () => {
     describe("Test DAOManager", async () => {
         it("Success Flow", async () => {
             await this.daoManager.setDistributedKeyId(this.votingKeyId);
-            expect(
-                await this.daoManager.distributedKeyId()
-            ).to.be.eq(this.votingKeyId);
+            expect(await this.daoManager.distributedKeyId()).to.be.eq(
+                this.votingKeyId
+            );
 
             for (let i = 0; i < 3; i++) {
                 await this.daoManager.createDAO(this.daoConfig);
                 this.daos.push(await this.daoManager.daos(i));
             }
 
-            expect(
-                await this.daoManager.daoCounter()
-            ).to.be.eq(3);
+            expect(await this.daoManager.daoCounter()).to.be.eq(3);
         });
-    })
+    });
 
     describe("Test FundManager", async () => {
         it("Success Flow", async () => {
@@ -511,9 +517,9 @@ describe("Test DAO Flows", () => {
             expect(
                 await this.fundManager.getFundingRoundState(fundingRoundID)
             ).to.be.equal(4);
-            expect(
-                await this.fundManager.getLastRoot()
-            ).to.be.eq(this.tree.root);
+            expect(await this.fundManager.getLastRoot()).to.be.eq(
+                this.tree.root
+            );
 
             // Withdraw fund to DAO
             for (let i = 0; i < result.length; i++) {
@@ -545,7 +551,10 @@ describe("Test DAO Flows", () => {
 
             expect(this.firstDAO.address).to.be.eq(this.daos[0]);
 
-            let MockContract = await ethers.getContractFactory("Mock", this.founder);
+            let MockContract = await ethers.getContractFactory(
+                "Mock",
+                this.founder
+            );
             this.mock = await MockContract.deploy(this.firstDAO.address);
 
             let firstProposal = {
@@ -564,7 +573,7 @@ describe("Test DAO Flows", () => {
                 descriptionHash:
                     "0x1d395c3cb1e6c1e9d9ad3eb571322666a8f5d45c99b67684a44c3a2b1ccda8fe",
             };
-            
+
             let proposalHash = await this.firstDAO.hashProposal(
                 firstProposal.actions,
                 firstProposal.descriptionHash
@@ -574,20 +583,23 @@ describe("Test DAO Flows", () => {
                 firstProposal.actions,
                 firstProposal.descriptionHash
             );
-            expect(await this.firstDAO.proposalIds(0)).to.be.equal(proposalHash);
+            expect(await this.firstDAO.proposalIds(0)).to.be.equal(
+                proposalHash
+            );
 
             let proposal = await this.firstDAO.proposals(proposalHash);
             await mineBlocks(this.daoConfig[0]);
             const eligibleVoters = [0, 1];
 
-            let [publicKeyX, publicKeyY] =
-                await this.dkgContract.getPublicKey(
-                    keyID
-                );
+            let [publicKeyX, publicKeyY] = await this.dkgContract.getPublicKey(
+                keyID
+            );
 
             for (let i = 0; i < eligibleVoters.length; i++) {
-                let index = this.tree.indexOf(this.commitments[eligibleVoters[i]]);
-                console.log(index);
+                let index = this.tree.indexOf(
+                    this.commitments[eligibleVoters[i]]
+                );
+                // console.log(index);
                 let path = this.tree.path(index);
 
                 let vote = Voter.getVote(
@@ -607,29 +619,31 @@ describe("Test DAO Flows", () => {
                     __dirname + "/../zk-resources/wasm/vote_dim3.wasm",
                     __dirname + "/../zk-resources/zkey/vote_dim3_final.zkey"
                 );
-                proof = Utils.genSolidityProof(proof.pi_a, proof.pi_b, proof.pi_c);
+                proof = Utils.genSolidityProof(
+                    proof.pi_a,
+                    proof.pi_b,
+                    proof.pi_c
+                );
                 let voteData = [
                     this.tree.root,
                     vote.nullifierHash,
                     vote.Ri,
                     vote.Mi,
-                    proof
+                    proof,
                 ];
-                console.log(publicSignals);
-                await this.firstDAO.castVote(
-                    proposalHash,
-                    voteData
-                );
+                // console.log(publicSignals);
+                await this.firstDAO.castVote(proposalHash, voteData);
 
                 expect(
-                    await this.firstDAO.nullifierHashes(proposalHash, vote.nullifierHash)
+                    await this.firstDAO.nullifierHashes(
+                        proposalHash,
+                        vote.nullifierHash
+                    )
                 ).to.be.eq(true);
             }
 
             await mineBlocks(this.daoConfig[1]);
-            expect(
-                await this.firstDAO.state(proposalHash)
-            ).to.be.equal(2);
+            expect(await this.firstDAO.state(proposalHash)).to.be.equal(2);
             await this.firstDAO.tally(proposalHash);
 
             let requestID = await this.firstDAO.getRequestID(
@@ -723,7 +737,8 @@ describe("Test DAO Flows", () => {
             // Should brute-force resultVector to get result
             let result = [0n, 0n, 0n];
             for (let i = 0; i < eligibleVoters.length; i++) {
-                let votingVector = VoterData.data1.votingVector[eligibleVoters[i]];
+                let votingVector =
+                    VoterData.data1.votingVector[eligibleVoters[i]];
                 for (let j = 0; j < votingVector.length; j++) {
                     result[j] +=
                         VoterData.data1.votingPower[eligibleVoters[i]] *
@@ -744,18 +759,14 @@ describe("Test DAO Flows", () => {
             await this.firstDAO.finalize(proposalHash);
 
             await mineBlocks(this.daoConfig[2]);
-            expect(
-                await this.firstDAO.state(proposalHash)
-            ).to.be.equal(5);
+            expect(await this.firstDAO.state(proposalHash)).to.be.equal(5);
 
             await this.firstDAO.queue(
                 firstProposal.actions,
                 firstProposal.descriptionHash
             );
 
-            expect(
-                await this.firstDAO.state(proposalHash)
-            ).to.be.equal(6);
+            expect(await this.firstDAO.state(proposalHash)).to.be.equal(6);
 
             await mineBlocks(this.daoConfig[3]);
 
@@ -766,8 +777,8 @@ describe("Test DAO Flows", () => {
             // expect(
             //     await this.firstDAO.state(proposalHash)
             // ).to.be.equal(8);
-        })
-    })
+        });
+    });
 });
 
 async function bn() {

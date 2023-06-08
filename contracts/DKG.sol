@@ -233,15 +233,14 @@ contract DKG is IDKG {
             i++
         ) {
             distributedKey
-            .round2DataSubmissions[_round2Contribution.recipientIndexes[i]]
-            .push(
-                Round2DataSubmission(
-                    _round2Contribution.senderIndex,
-                    _round2Contribution.ciphers[i]
-                )
-            );
+                .round2DataSubmissions[_round2Contribution.recipientIndexes[i]]
+                .push(
+                    Round2DataSubmission(
+                        _round2Contribution.senderIndex,
+                        _round2Contribution.ciphers[i]
+                    )
+                );
         }
-        
 
         distributedKey.round2Counter += 1;
         emit Round2DataSubmitted(msg.sender);
@@ -487,9 +486,15 @@ contract DKG is IDKG {
         return IVerifier(distributedKey.verifier);
     }
 
+    function getTallyTracker(
+        bytes32 _requestID
+    ) external view override returns (TallyTracker memory) {
+        return tallyTrackers[_requestID];
+    }
+
     function getTallyTrackerState(
         bytes32 _requestID
-    ) public view returns (TallyTrackerState) {
+    ) public view override returns (TallyTrackerState) {
         TallyTracker memory tallyTracker = tallyTrackers[_requestID];
         (uint8 t, ) = IFundManager(owner).getDKGParams();
 

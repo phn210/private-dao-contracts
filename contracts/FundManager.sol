@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "@chainlink/contracts/src/v0.8/AutomationCompatible.sol";
 import "./interfaces/IFundManager.sol";
 import "./interfaces/IDKGRequest.sol";
 import "./interfaces/IDKG.sol";
@@ -10,7 +11,12 @@ import "./libs/Math.sol";
 import "./libs/MerkleTree.sol";
 import "./DKG.sol";
 
-contract FundManager is IFundManager, IDKGRequest, MerkleTree {
+contract FundManager is
+    IFundManager,
+    IDKGRequest,
+    MerkleTree,
+    AutomationCompatibleInterface
+{
     address public founder;
     uint8 public numberOfCommittees;
     uint8 public threshold;
@@ -47,7 +53,10 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
             _committeeList.length >= 5,
             "FundManager contract: Require the number of committees greater than 5"
         );
-        require(_daoManager != address(0), "FundManager: DAOManager can not be address 0");
+        require(
+            _daoManager != address(0),
+            "FundManager: DAOManager can not be address 0"
+        );
 
         founder = msg.sender;
         daoManager = _daoManager;
@@ -202,12 +211,16 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
         emit Funded(_fundingRoundID, msg.sender, msg.value, _commitment);
     }
 
-    function startTallying(uint256 _fundingRoundID) external override {
+    function startTallying(uint256 _fundingRoundID) public override {
         bytes32 requestID = fundingRounds[_fundingRoundID].requestID;
         require(
-            getFundingRoundState(_fundingRoundID) == FundingRoundState.TALLYING
+            getFundingRoundState(_fundingRoundID) ==
+                FundingRoundState.TALLYING &&
+                dkgContract.getTallyTracker(requestID).contributionVerifier ==
+                address(0) &&
+                dkgContract.getTallyTracker(requestID).resultVerifier ==
+                address(0)
         );
-
         Request memory request = requests[requestID];
         dkgContract.startTallying(
             requestID,
@@ -376,6 +389,7 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
     }
 
     /*================== INTERNAL FUNCTION ==================*/
+
     function _verifyProof(
         IVerifier _verifier,
         bytes calldata _proof,
@@ -396,5 +410,39 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
                 [proof[6], proof[7]],
                 _publicInputs
             );
+    }
+
+    /*================= CHAINLINK AUTOMATION =================*/
+    function checkUpkeep(
+        bytes calldata checkData
+    ) external override returns (bool upkeepNeeded, bytes memory performData) {
+        uint256 fundingRoundID = fundingRoundCounter - 1;
+        bytes32 requestID = fundingRounds[fundingRoundID].requestID;
+        if (
+            getFundingRoundState(fundingRoundID) ==
+            FundingRoundState.TALLYING &&
+            dkgContract.getTallyTracker(requestID).contributionVerifier ==
+            address(0) &&
+            dkgContract.getTallyTracker(requestID).resultVerifier == address(0)
+        ) {
+            upkeepNeeded = true;
+            performData = bytes.concat(bytes32(fundingRoundID));
+        }
+    }
+
+    function performUpkeep(bytes calldata performData) external override {
+        uint256 fundingRoundID = fundingRoundCounter - 1;
+        bytes32 requestID = fundingRounds[fundingRoundID].requestID;
+        if (
+            getFundingRoundState(fundingRoundID) ==
+            FundingRoundState.TALLYING &&
+            dkgContract.getTallyTracker(requestID).contributionVerifier ==
+            address(0) &&
+            dkgContract.getTallyTracker(requestID).resultVerifier == address(0)
+        ) {
+            uint256[1] memory data = abi.decode(performData, (uint256[1]));
+            require(data[0] == fundingRoundID);
+            startTallying(data[0]);
+        }
     }
 }
