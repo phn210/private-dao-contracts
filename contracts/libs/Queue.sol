@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 contract Queue {
     address public owner;
-    mapping(uint256 => address) data;
+    mapping(uint256 => address) public data;
     uint256 first = 1;
     uint256 last = 0;
     uint256 maxLength;

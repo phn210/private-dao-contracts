@@ -12,7 +12,7 @@ contract DAOManager is IDAOFactory {
     IDKG public dkg;
     
     address public admin;
-    uint256 public REQUIRED_DEPOSIT;
+    uint256 public requiredDeposit;
     uint256 public daoCounter;
     uint256 public distributedKeyId;
 
@@ -44,13 +44,22 @@ contract DAOManager is IDAOFactory {
         dkg = IDKG(_dkg);
     }
 
+    function setRequiredDeposit(uint256 _requirement) external onlyAdmin {
+        requiredDeposit = _requirement;
+    }
+
     function setDistributedKeyId(uint256 _distributedKeyId) external onlyAdmin {
         distributedKeyId = _distributedKeyId;
     }
 
-    function createDAO(IDAO.Config calldata config) external payable override returns (uint256 daoId) {
+    function createDAO(uint256 expectedId, IDAO.Config calldata config) external payable override returns (uint256 daoId) {
         require(
-            msg.value >= REQUIRED_DEPOSIT,
+            daoId == daoCounter,
+            "DAOManager::createDAO: update expectedId to latest value"
+        );
+
+        require(
+            msg.value >= requiredDeposit,
             "DAOManager::createDAO: not enough deposit to create a DAO"
         );
         
@@ -73,11 +82,13 @@ contract DAOManager is IDAOFactory {
         deposits[newDAO] = msg.value;
 
         _applyForFunding(newDAO);
+
+        emit DAOCreated(daoId, newDAO, msg.sender);
     }
 
     function applyForFunding() external {
         require(
-            deposits[msg.sender] >= REQUIRED_DEPOSIT,
+            deposits[msg.sender] >= requiredDeposit,
             "DAOManager::applyForFunding: not enough deposit to apply for next funding rounds"  
         );
         fundManager.applyForFunding(msg.sender);
