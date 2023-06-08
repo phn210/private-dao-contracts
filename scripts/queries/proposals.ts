@@ -12,13 +12,14 @@ async function main() {
     console.log("DAO:", dao.address);
 
     for(let i = 0; i < proposalIndexes.length; i++) {
-        console.log("Proposal", i);
+        console.log("Proposal", proposalIndexes[i]);
         let proposalId = await dao.proposalIds(proposalIndexes[i]);
-        console.log(await dao.proposals([proposalId]));
+        console.log(await dao.proposals(proposalId));
+        console.log("State", await dao.state(proposalId));
     }
 }
 
 main().then(() => {
-    console.log("DONE");
+    // console.log("DONE");
     process.exit();
 });

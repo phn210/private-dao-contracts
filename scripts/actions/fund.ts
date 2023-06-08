@@ -59,10 +59,12 @@ async function main() {
                 value: fundingValue,
             }
         );
+
         console.log('Investor', $.voters[i].address, 'funded!');
         console.log(Utils.logFullObject({
             amount: fundingValue,
-            fundingVector: fundingVector[i]
+            fundingVector: fundingVector[i],
+            commitment: fund.commitment
         }));
     }
 }

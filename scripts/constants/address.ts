@@ -46,7 +46,6 @@ export const ADDRESSES: { [key: string]: { [key: string]: string } } = {
         DAOManager: "0x942Ce1A60117a2eF9Aed65C2F4b2b6aba0998F87",
         DKG: "0x17d18135Acd0cA60d0D0d3687C852e84c2230b3a",
         QUEUE: "0x835247c8C195350e48cdb4b5A026D397BEC04d80",
-        DAO: "",
     }
 };
 
