@@ -20,6 +20,9 @@ contract Queue {
 
     function enqueue(address _data) public onlyOwner {
         require(getLength() + 1 <= maxLength);
+        for (uint256 i = first; i <= last; i++) {
+            require(data[i] != _data);
+        }
         last += 1;
         data[last] = _data;
     }

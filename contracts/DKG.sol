@@ -257,10 +257,7 @@ contract DKG is IDKG {
         uint256[][] memory _M
     ) external override {
         TallyTracker storage tallyTracker = tallyTrackers[_requestID];
-        require(
-            tallyTracker.contributionVerifier == address(0) &&
-                tallyTracker.resultVerifier == address(0)
-        );
+        require(tallyTracker.dao == address(0));
         tallyTracker.distributedKeyID = _distributedKeyID;
         tallyTracker.R = _R;
         tallyTracker.M = _M;

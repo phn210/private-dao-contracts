@@ -421,9 +421,7 @@ contract FundManager is
         if (
             getFundingRoundState(fundingRoundID) ==
             FundingRoundState.TALLYING &&
-            dkgContract.getTallyTracker(requestID).contributionVerifier ==
-            address(0) &&
-            dkgContract.getTallyTracker(requestID).resultVerifier == address(0)
+            dkgContract.getTallyTracker(requestID).dao == address(0)
         ) {
             upkeepNeeded = true;
             performData = bytes.concat(bytes32(fundingRoundID));
@@ -436,9 +434,7 @@ contract FundManager is
         if (
             getFundingRoundState(fundingRoundID) ==
             FundingRoundState.TALLYING &&
-            dkgContract.getTallyTracker(requestID).contributionVerifier ==
-            address(0) &&
-            dkgContract.getTallyTracker(requestID).resultVerifier == address(0)
+            dkgContract.getTallyTracker(requestID).dao == address(0)
         ) {
             uint256[1] memory data = abi.decode(performData, (uint256[1]));
             require(data[0] == fundingRoundID);
