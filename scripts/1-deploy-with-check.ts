@@ -10,8 +10,8 @@ export async function deploy(logging: boolean) {
 
     let config = {
         merkleTreeDepth: 20,
-        fundingRoundConfig: [10, 60, 60],
-        daoConfig: [10, 60, 60, 10, 10]
+        fundingRoundConfig: [10, 100, 40],
+        daoConfig: [10, 100, 40, 10, 10]
     };
 
     let accounts = await ethers.getSigners();
@@ -195,11 +195,15 @@ export async function deploy(logging: boolean) {
     let queue = await ethers.getContractAt("Queue", queueAddress);
     if (logging) console.log('QUEUE:', queue.address);
 
-    // await daoManager.setFundManager(fundManager.address);
-    // console.log("Set FundManager for DAOManager contract");
+    if ((await daoManager.fundManager()).toLowerCase() != fundManager.address.toLowerCase()) {
+        await daoManager.setFundManager(fundManager.address);
+        console.log("Set FundManager for DAOManager contract");
+    }
 
-    // await daoManager.setDKG(dkg.address);
-    // console.log("Set DKG for DAOManager contract");
+    if ((await daoManager.dkg()).toLowerCase() != dkg.address.toLowerCase()) {
+        await daoManager.setDKG(dkg.address);
+        console.log("Set DKG for DAOManager contract");
+    }
 
     let DAO = await getContract("DAO");
     let dao = await (async (contract, name, init: any = []) => {

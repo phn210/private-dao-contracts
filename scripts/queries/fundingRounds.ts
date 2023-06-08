@@ -5,7 +5,7 @@ async function main() {
 
     console.log("Funding round counter", await _.FundManager.fundingRoundCounter());
     console.log("Number of DAOs in applied queue", await _.QUEUE.getLength());
-    const fundingRoundIds = [0];
+    const fundingRoundIds = [1];
 
     for(let i = 0; i < fundingRoundIds.length; i++) {
         console.log("Funding Round", fundingRoundIds[i]);

@@ -54,7 +54,7 @@ contract DAOManager is IDAOFactory {
 
     function createDAO(uint256 expectedId, IDAO.Config calldata config) external payable override returns (uint256 daoId) {
         require(
-            daoId == daoCounter,
+            expectedId == daoCounter,
             "DAOManager::createDAO: update expectedId to latest value"
         );
 

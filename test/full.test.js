@@ -322,7 +322,8 @@ describe("Test DAO Flows", () => {
             );
 
             for (let i = 0; i < 3; i++) {
-                await this.daoManager.createDAO(this.daoConfig);
+                let expectedId = await this.daoManager.daoCounter();
+                await this.daoManager.createDAO(expectedId, this.daoConfig);
                 this.daos.push(await this.daoManager.daos(i));
             }
 

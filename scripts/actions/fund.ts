@@ -10,7 +10,7 @@ async function main() {
     const { _, $, t, n, config } = await deploy(false);
 
     const fundingRoundID = 0;
-    const keyID = 2;
+    const keyID = 1;
     // in ETH
     const fundingAmount = '0.01';
     const fundingValue = BigInt(Number(ethers.utils.parseEther(fundingAmount)));

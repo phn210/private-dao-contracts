@@ -11,7 +11,7 @@ async function main() {
 
     const committeeIndexes = [1, 2, 3, 4, 5];
     const preset = true;
-    const keyID = 2;
+    const keyID = 5;
 
     for (let i = 0; i < committeeIndexes.length; i++) {
         let committeeIndex = committeeIndexes[i];
