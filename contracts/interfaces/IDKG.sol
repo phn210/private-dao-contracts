@@ -231,6 +231,14 @@ interface IDKG {
         uint256 _distributedKeyID
     ) external view returns (IVerifier);
 
+    function getTallyTracker(
+        bytes32 _requestID
+    ) external view returns (TallyTracker memory);
+
+    function getTallyTrackerState(
+        bytes32 _requestID
+    ) external view returns (TallyTrackerState);
+
     function getTallyDataSubmissions(
         bytes32 _requestID
     ) external view returns (TallyDataSubmission[] memory);

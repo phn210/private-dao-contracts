@@ -7,7 +7,7 @@ async function main() {
     let founder = accounts[0];
     let chainID = String(network.config.chainId);
     let contracts = await loadAllContracts(founder, chainID);
-
+    
     let keyType = 0;
     // 0 is FUNDING
     // 1 IS VOTING
