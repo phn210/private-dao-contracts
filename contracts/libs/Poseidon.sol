@@ -9,7 +9,7 @@ contract PoseidonUnit2 {
 contract Poseidon {
     PoseidonUnit2 public poseidon2;
 
-    constructor(address _poseidon2) public {
+    constructor(address _poseidon2) {
         poseidon2 = PoseidonUnit2(_poseidon2);
     }
 

@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { ethers, network } from "hardhat";
 // @ts-ignore
-import * as genPoseidonP2Contract from "circomlibjs/src/poseidon_gencontract";
+import * as genPoseidonContract from "circomlibjs/src/poseidon_gencontract";
 import { ADDRESSES } from "./constants/address";
 
 var t = 3;
@@ -55,8 +55,8 @@ async function main() {
     let resultVerifierDim3 = await ResultVerifierDim3.deploy();
 
     let PoseidonUnit2 = await ethers.getContractFactory(
-        genPoseidonP2Contract.abi,
-        genPoseidonP2Contract.createCode(),
+        genPoseidonContract.abi,
+        genPoseidonContract.createCode(2),
         founder
     );
     let poseidonUnit2 = await PoseidonUnit2.deploy();
