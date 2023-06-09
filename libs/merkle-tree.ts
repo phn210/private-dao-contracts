@@ -4,7 +4,7 @@ import {
     PartialMerkleTree,
     ProofPath,
 } from "fixed-merkle-tree";
-import Poseidon from "./poseideon-hash";
+import Poseidon from "./poseidon-hash";
 import MiMC from "./mimc-hash";
 
 namespace Tree {

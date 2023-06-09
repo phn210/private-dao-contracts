@@ -1,11 +1,12 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const genPoseidonP2Contract = require("circomlibjs/src/poseidon_gencontract");
+const genPoseidonContract = require("circomlibjs/src/poseidon_gencontract");
 const snarkjs = require("snarkjs");
 const { Committee, Voter } = require("../libs/index");
 const { Utils } = require("../libs/utils");
 const { Tree } = require("../libs/merkle-tree");
 const { VoterData, CommitteeData } = require("./data");
+const psd = require("../libs/poseidon-hash");
 
 var dim = 3;
 var t = 3;
@@ -67,9 +68,10 @@ describe("Test DAO Flows", () => {
             this.founder
         );
         this.resultVerifierDim3 = await ResultVerifierDim3.deploy();
+
         let PoseidonUnit2 = await ethers.getContractFactory(
-            genPoseidonP2Contract.abi,
-            genPoseidonP2Contract.createCode(),
+            genPoseidonContract.abi,
+            genPoseidonContract.createCode(2),
             this.founder
         );
         let poseidonUnit2 = await PoseidonUnit2.deploy();
