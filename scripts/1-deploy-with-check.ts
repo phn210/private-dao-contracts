@@ -11,7 +11,8 @@ export async function deploy(logging: boolean) {
     let config = {
         merkleTreeDepth: 20,
         fundingRoundConfig: [10, 100, 40],
-        daoConfig: [10, 100, 40, 10, 10]
+        daoConfig: [10, 100, 40, 10, 10],
+        requiredDeposit: 0
     };
 
     let accounts = await ethers.getSigners();
@@ -160,7 +161,7 @@ export async function deploy(logging: boolean) {
             if (logging) console.log(`${name} (NEW):`, ct.address);
             return ct;
         }
-    })(DAOManager, "DAOManager");
+    })(DAOManager, "DAOManager", [config.requiredDeposit]);
 
     // Deploy DAOManager contract
     let FundManager = await getContract("FundManager");

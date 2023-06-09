@@ -415,7 +415,7 @@ contract FundManager is
     /*================= CHAINLINK AUTOMATION =================*/
     function checkUpkeep(
         bytes calldata checkData
-    ) external override returns (bool upkeepNeeded, bytes memory performData) {
+    ) view external override returns (bool upkeepNeeded, bytes memory performData) {
         uint256 fundingRoundID = fundingRoundCounter - 1;
         bytes32 requestID = fundingRounds[fundingRoundID].requestID;
         if (

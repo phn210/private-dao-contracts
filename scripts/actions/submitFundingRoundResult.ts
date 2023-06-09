@@ -11,7 +11,7 @@ import { getFundedValue } from "../constants/funded";
 async function main() {
     const { _, $, t, n, config } = await deploy(false);
 
-    const fundingRoundID = 0;
+    const fundingRoundID = 1;
     const dim = 3;
 
     console.log(
@@ -75,9 +75,6 @@ async function main() {
         `Funding Round ${fundingRoundID} State:`,
         await _.FundManager.getFundingRoundState(fundingRoundID)
     );
-
-    await _.FundManager.finalizeFundingRound(fundingRoundID);
-    console.log('Funding round is finalized');
 }
 
 main().then(() => {

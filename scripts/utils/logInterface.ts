@@ -12,7 +12,9 @@ async function main() {
         "Poseidon",
         "FundManager",
         "DAOManager",
-        "DKG"
+        "DKG",
+        "DAO",
+        "Queue"
     ]
     
     const output: {[key: string]: any} = await Promise.all(names.map(e => ethers.getContractFactory(e)));

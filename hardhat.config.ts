@@ -46,8 +46,8 @@ const config: HardhatUserConfig = {
         sepolia: {
             accounts: process.env.KEYS?.split(" "),
             chainId: chainIds.sepolia,
-            url: "https://rpc.sepolia.org",
-            gas: 2000000
+            url: "https://rpc2.sepolia.org",
+            gas: 5000000
         },
     },
     solidity: {

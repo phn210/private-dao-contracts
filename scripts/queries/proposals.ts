@@ -4,11 +4,11 @@ async function main() {
     const { _, $, t, n, config } = await deploy(false);
 
     const daoIndexes = 0;
-    const proposalIndexes = [0];
+    const proposalIndexes = [0, 1, 2, 3];
 
     const daoAddress = await _.DAOManager.daos(daoIndexes);
 
-    const dao = _.DAO.attach(daoAddress);
+    const dao = await _.DAO.attach(daoAddress);
     console.log("DAO:", dao.address);
 
     for(let i = 0; i < proposalIndexes.length; i++) {

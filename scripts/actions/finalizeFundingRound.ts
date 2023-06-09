@@ -10,7 +10,7 @@ import { Utils } from "../../libs/utils";
 async function main() {
     const { _, $, t, n, config } = await deploy(false);
 
-    const fundingRoundID = 0;
+    const fundingRoundID = 8;
     
     console.log(
         `Funding Round ${fundingRoundID} State:`,

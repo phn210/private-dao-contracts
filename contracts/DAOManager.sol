@@ -11,8 +11,8 @@ contract DAOManager is IDAOFactory {
     IFundManager public fundManager;
     IDKG public dkg;
     
-    address public admin;
-    uint256 public requiredDeposit;
+    uint256 private requiredDeposit;
+    address private admin;
     uint256 public daoCounter;
     uint256 public distributedKeyId;
 
@@ -28,8 +28,9 @@ contract DAOManager is IDAOFactory {
     }
 
     // FIXME
-    constructor() {
+    constructor(uint256 _requiredDeposit) {
         admin = msg.sender;
+        requiredDeposit = _requiredDeposit;
     }
 
     function setAdmin(address _admin) external onlyAdmin {
@@ -42,10 +43,6 @@ contract DAOManager is IDAOFactory {
 
     function setDKG(address _dkg) external onlyAdmin {
         dkg = IDKG(_dkg);
-    }
-
-    function setRequiredDeposit(uint256 _requirement) external onlyAdmin {
-        requiredDeposit = _requirement;
     }
 
     function setDistributedKeyId(uint256 _distributedKeyId) external onlyAdmin {

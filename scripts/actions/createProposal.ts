@@ -19,7 +19,7 @@ async function main() {
         descriptionHash: '0x'+crypto.randomBytes(32).toString('hex')
     };
 
-    const daoAddress = _.DAOManager.daos(daoId);
+    const daoAddress = await _.DAOManager.daos(daoId);
     const dao = _.DAO.attach(daoAddress);
 
     console.log(`Creating proposal for DAO ${dao.address}`);

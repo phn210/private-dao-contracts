@@ -9,7 +9,7 @@ import { Utils } from "../../libs/utils";
 async function main() {
     const { _, $, t, n, config } = await deploy(false);
 
-    const fundingRoundID = 0;
+    const fundingRoundID = 7;
 
     for (let i = 0; i < $.voters.length; i++) {
         await _.FundManager.connect($.voters[i]).refund(fundingRoundID);

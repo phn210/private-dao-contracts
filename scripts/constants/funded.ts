@@ -1,19 +1,39 @@
 export const FUNDED: {[key: string]: {[key: string]: any[]}} = {
-    '0x119ca4dbdc5e30749b85a6edcb3a0c99444e6062': {
+    '0xb4Dde6Dba767A281ef15bc4c64E8607ceC25420D': {
         '0xccf5f51d2d6ce305d82f7bb47b08601f60613e29': [
-            { amount: 10000000000000000n, fundingVector: [ 1, 0, 0 ], commitment: '0x0413200c1ea35304505bbfc20d819755f6bc9071dbe651d04cc35bf0ee5659d6' }
+            {
+                amount: 10000000000000000n,
+                fundingVector: [ 1, 0, 0 ],
+                commitment: 8729045990458720092177554556566367530966918467096221251221194014375854871291n
+            }
         ],
         '0x6a426d63ac640afb5653b3ef06ca73ed971d2f65': [
-            { amount: 10000000000000000n, fundingVector: [ 1, 0, 0 ], commitment: '0x2fe5786118101dcd0a2c20ac3d0178a39f820b539756a679a5e5d7054cea6083' }
+            {
+                amount: 10000000000000000n,
+                fundingVector: [ 1, 0, 0 ],
+                commitment: 19408636529744528362576073263845617040871301005450289790834574920757484677787n
+            }
         ],
         '0x2d864e04c09a83803b9f58ad5dd5659d0ff664e1': [
-            { amount: 10000000000000000n, fundingVector: [ 0, 1, 0 ], commitment: '0x2dc9e4e79eec43143a4e820ad66ef4d4427de7bcf20a47598c4cbbbf76dff4f7' }
+            {
+                amount: 10000000000000000n,
+                fundingVector: [ 0, 1, 0 ],
+                commitment: 12191534133526656252298437085850784513855780524522070282054045591756140055616n
+            }
         ],
         '0x0e80c0ab999228cab1f77b8714db10d22c8d9ec8': [
-            { amount: 10000000000000000n, fundingVector: [ 0, 1, 0 ], coWmmitment: '0x020d0b3023f4fa328a63c6ccadb4e78188f11dfe1a461eb97e26d8f42d4f0d53' }
+            {
+                amount: 10000000000000000n,
+                fundingVector: [ 0, 1, 0 ],
+                commitment: 20005001368570141723988780948214417802738230393163470930594350534677188738531n
+            }
         ],
         '0x1ad841ea7a95c2fd3bba0812e538e9061a9f743b': [
-            { amount: 10000000000000000n, fundingVector: [ 0, 0, 1 ], commitment: '0x071f3c090b53ab4972fe2031c083c0ae2f7622b0e929087a52aaa5552eda8149' }
+            {
+                amount: 10000000000000000n,
+                fundingVector: [ 0, 0, 1 ],
+                commitment: 18479541686287050468871183552712480941854540799758827866146072778929985966886n
+            }
         ]
     }
 }

@@ -14,7 +14,7 @@ async function main() {
 
     for (let i = 0; i < numKeys; i++) {
         let keyId = await _.DKG.distributedKeyCounter();
-        await _.DKG.generateDistributedKey(dimension, keyType);
+        // await _.DKG.generateDistributedKey(dimension, keyType);
         console.log("Generated Key ID:", keyId);
     }
 }

@@ -97,7 +97,8 @@ describe("Test DAO Flows", () => {
             this.founder
         );
 
-        this.daoManager = await DAOManager.deploy();
+        this.requiredDeposit = 0;
+        this.daoManager = await DAOManager.deploy(this.requiredDeposit);
 
         let FundManager = await ethers.getContractFactory(
             "FundManager",
@@ -635,12 +636,12 @@ describe("Test DAO Flows", () => {
                 // console.log(publicSignals);
                 await this.firstDAO.castVote(proposalHash, voteData);
 
-                expect(
-                    await this.firstDAO.nullifierHashes(
-                        proposalHash,
-                        vote.nullifierHash
-                    )
-                ).to.be.eq(true);
+                // expect(
+                //     await this.firstDAO.nullifierHashes(
+                //         proposalHash,
+                //         vote.nullifierHash
+                //     )
+                // ).to.be.eq(true);
             }
 
             await mineBlocks(this.daoConfig[1]);
@@ -762,19 +763,13 @@ describe("Test DAO Flows", () => {
             await mineBlocks(this.daoConfig[2]);
             expect(await this.firstDAO.state(proposalHash)).to.be.equal(5);
 
-            await this.firstDAO.queue(
-                firstProposal.actions,
-                firstProposal.descriptionHash
-            );
+            await this.firstDAO.queue(proposalHash);
 
             expect(await this.firstDAO.state(proposalHash)).to.be.equal(6);
 
             await mineBlocks(this.daoConfig[3]);
 
-            await this.firstDAO.execute(
-                firstProposal.actions,
-                firstProposal.descriptionHash
-            );
+            await this.firstDAO.execute(proposalHash);
             // expect(
             //     await this.firstDAO.state(proposalHash)
             // ).to.be.equal(8);

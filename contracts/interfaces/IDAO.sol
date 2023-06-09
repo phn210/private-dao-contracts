@@ -22,6 +22,13 @@ interface IDAO {
         Abstain
     }
 
+    enum UpkeepAction {
+        Tally,
+        Finalize,
+        Queue,
+        Execute
+    }
+
     struct Config {
         uint32 pendingPeriod;
         uint32 votingPeriod;
@@ -35,6 +42,7 @@ interface IDAO {
         uint256 forVotes;       // Current number of votes in favor of this proposal.
         uint256 againstVotes;   // Current number of votes in opposition to this proposal.
         uint256 abstainVotes;   // Current number of votes in abstain to this proposal.
+        address proposer;
         uint64 startBlock;      // The block at which voting begins: veTrava must be locked prior to this block to possess voting power.
         bool canceled;          // Flag marking whether the proposal has been canceled.
         bool executed;          // Flag marking whether the proposal has been executed.
@@ -104,13 +112,13 @@ interface IDAO {
      */
     event VoteCast(uint256 proposalId, uint256 nullifierHash);
 
-    function propose(Action[] memory actions, bytes32 descriptionHash) external returns (uint256 proposalId);
+    function propose(Action[] memory _actions, bytes32 _descriptionHash) external returns (uint256 proposalId);
 
-    function queue(Action[] memory actions, bytes32 descriptionHash) external;
+    function queue(uint256 proposalId) external;
 
-    function execute(Action[] memory actions, bytes32 descriptionHash) external payable;
+    function execute(uint256 proposalId) external payable;
 
-    function cancel(Action[] memory actions, bytes32 descriptionHash) external;
+    function cancel(uint256 proposalId) external;
 
     function castVote(
         uint256 proposalId,

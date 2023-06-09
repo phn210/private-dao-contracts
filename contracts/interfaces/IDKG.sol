@@ -93,7 +93,7 @@ interface IDKG {
     }
 
     /**
-     * TallyTracker => an extended version of IDKGRequest.Request :v
+     * TallyTracker => an extended version of IDKGRequest.Request
      * => IDKG.Request & IDKGRequest.RequestInfo
      * Consider to remove/replace
      * state: use multiple if else => a function
