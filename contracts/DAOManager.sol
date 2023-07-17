@@ -49,7 +49,7 @@ contract DAOManager is IDAOFactory {
         distributedKeyId = _distributedKeyId;
     }
 
-    function createDAO(uint256 expectedId, IDAO.Config calldata config) external payable override returns (uint256 daoId) {
+    function createDAO(uint256 expectedId, IDAO.Config calldata config, bytes32 descriptionHash) external payable override returns (uint256 daoId) {
         require(
             expectedId == daoCounter,
             "DAOManager::createDAO: update expectedId to latest value"
@@ -80,7 +80,7 @@ contract DAOManager is IDAOFactory {
 
         _applyForFunding(newDAO);
 
-        emit DAOCreated(daoId, newDAO, msg.sender);
+        emit DAOCreated(daoId, newDAO, msg.sender, descriptionHash);
     }
 
     function applyForFunding() external {
