@@ -412,6 +412,12 @@ contract FundManager is
             );
     }
 
+    function getRequestResult(
+        bytes32 _requestID
+    ) external view override returns (uint256[] memory) {
+        return requests[_requestID].result;
+    }
+
     /*================= CHAINLINK AUTOMATION =================*/
     function checkUpkeep(
         bytes calldata checkData

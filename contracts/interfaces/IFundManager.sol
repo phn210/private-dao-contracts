@@ -21,7 +21,6 @@ interface IFundManager {
         mapping(address => uint256) balances;
         mapping(address => uint256) daoBalances;
         uint64 launchedAt;
-        uint64 talliedAt;
         uint64 finalizedAt;
         uint64 failedAt;
     }
