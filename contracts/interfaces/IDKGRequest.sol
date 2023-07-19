@@ -33,7 +33,7 @@ interface IDKGRequest {
         bytes32 _requestID
     ) external view returns (uint256);
 
-    function getRequestResult(
+    function getResult(
         bytes32 _requestId
     ) external view returns (uint256[] memory);
 }

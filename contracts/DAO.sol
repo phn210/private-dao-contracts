@@ -501,7 +501,7 @@ contract DAO is IDAO, IDKGRequest, AutomationCompatibleInterface {
         return requests[_requestID].distributedKeyID;
     }
 
-    function getRequestResult(
+    function getResult(
         bytes32 _requestID
     ) external view override returns (uint256[] memory) {
         return requests[_requestID].result;
