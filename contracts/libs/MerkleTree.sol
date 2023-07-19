@@ -22,6 +22,8 @@ contract MerkleTree {
     uint32 public currentRootIndex = 0;
     uint32 public nextIndex = 0;
 
+    event LeafInserted(uint32 indexed index, uint256 indexed commitment);
+
     constructor(uint32 _levels, IPoseidon _poseidon) {
         require(_levels > 0, "level should be greater than zero");
         require(_levels <= 32, "level should be less than 32");
@@ -46,12 +48,12 @@ contract MerkleTree {
     }
 
     function _insert(uint256 _leaf) internal returns (uint32 index) {
-        uint32 _nextIndex = nextIndex;
+        index = nextIndex;
         require(
-            _nextIndex != uint32(2) ** levels,
+            index != uint32(2) ** levels,
             "Merkle tree is full. No more leaves can be added"
         );
-        uint32 currentIndex = _nextIndex;
+        uint32 currentIndex = index;
         uint256 currentLevelsHash = _leaf;
         uint256 left;
         uint256 right;
@@ -72,8 +74,7 @@ contract MerkleTree {
         uint32 newRootIndex = (currentRootIndex + 1) % ROOT_HISTORY_SIZE;
         currentRootIndex = newRootIndex;
         roots[newRootIndex] = currentLevelsHash;
-        nextIndex = _nextIndex + 1;
-        return _nextIndex;
+        nextIndex = index + 1;
     }
 
     function _insertBatch(uint256[] memory _leafs) internal {

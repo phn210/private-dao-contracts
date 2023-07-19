@@ -1,23 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import './interfaces/IDAOFactory.sol';
-import './interfaces/IDKG.sol';
-import './interfaces/IFundManager.sol';
-import './DAO.sol';
+import "./interfaces/IDAOFactory.sol";
+import "./interfaces/IDKG.sol";
+import "./interfaces/IFundManager.sol";
+import "./DAO.sol";
 
 contract DAOManager is IDAOFactory {
-
     IFundManager public fundManager;
     IDKG public dkg;
-    
+
     uint256 private requiredDeposit;
     address private admin;
     uint256 public daoCounter;
     uint256 public distributedKeyId;
 
-    mapping (uint256 => address) public override daos;
-    mapping (address => uint256) public deposits;
+    mapping(uint256 => address) public override daos;
+    mapping(address => uint256) public deposits;
 
     modifier onlyAdmin() {
         require(
@@ -49,7 +48,11 @@ contract DAOManager is IDAOFactory {
         distributedKeyId = _distributedKeyId;
     }
 
-    function createDAO(uint256 expectedId, IDAO.Config calldata config, bytes32 descriptionHash) external payable override returns (uint256 daoId) {
+    function createDAO(
+        uint256 expectedId,
+        IDAO.Config calldata config,
+        bytes32 descriptionHash
+    ) external payable override returns (uint256 daoId) {
         require(
             expectedId == daoCounter,
             "DAOManager::createDAO: update expectedId to latest value"
@@ -59,18 +62,21 @@ contract DAOManager is IDAOFactory {
             msg.value >= requiredDeposit,
             "DAOManager::createDAO: not enough deposit to create a DAO"
         );
-        
+
         require(
             daos[daoCounter] == address(0),
             "DAOManager::createDAO: DAO existed"
         );
 
-        address newDAO = address(new DAO(
-            config, 
-            address(fundManager),
-            address(dkg),
-            distributedKeyId
-        ));
+        address newDAO = address(
+            new DAO(
+                config,
+                address(fundManager),
+                address(dkg),
+                distributedKeyId,
+                descriptionHash
+            )
+        );
 
         daoId = daoCounter;
         daos[daoId] = newDAO;
@@ -86,7 +92,7 @@ contract DAOManager is IDAOFactory {
     function applyForFunding() external {
         require(
             deposits[msg.sender] >= requiredDeposit,
-            "DAOManager::applyForFunding: not enough deposit to apply for next funding rounds"  
+            "DAOManager::applyForFunding: not enough deposit to apply for next funding rounds"
         );
         fundManager.applyForFunding(msg.sender);
     }

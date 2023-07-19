@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import './IDKGRequest.sol';
+import "./IDKGRequest.sol";
 
 interface IDAO {
     enum ProposalState {
@@ -38,15 +38,15 @@ interface IDAO {
     }
 
     struct Proposal {
-        uint256 id;             // Unique hash for looking up a proposal.
-        uint256 forVotes;       // Current number of votes in favor of this proposal.
-        uint256 againstVotes;   // Current number of votes in opposition to this proposal.
-        uint256 abstainVotes;   // Current number of votes in abstain to this proposal.
+        uint256 id; // Unique hash for looking up a proposal.
+        uint256 forVotes; // Current number of votes in favor of this proposal.
+        uint256 againstVotes; // Current number of votes in opposition to this proposal.
+        uint256 abstainVotes; // Current number of votes in abstain to this proposal.
         address proposer;
-        uint64 startBlock;      // The block at which voting begins: veTrava must be locked prior to this block to possess voting power.
-        bool canceled;          // Flag marking whether the proposal has been canceled.
-        bool executed;          // Flag marking whether the proposal has been executed.
-        uint256 eta;             // The block that the proposal will be available for execution, set once the vote succeeds.
+        uint64 startBlock; // The block at which voting begins: veTrava must be locked prior to this block to possess voting power.
+        bool canceled; // Flag marking whether the proposal has been canceled.
+        bool executed; // Flag marking whether the proposal has been executed.
+        uint256 eta; // The block that the proposal will be available for execution, set once the vote succeeds.
     }
 
     struct Action {
@@ -69,11 +69,11 @@ interface IDAO {
      */
     event ProposalCreated(
         uint256 index,
-        uint256 proposalId,
+        uint256 indexed proposalId,
         address proposer,
         Action[] actions,
         uint256 startBlock,
-        bytes32 descriptionHash
+        bytes32 indexed descriptionHash
     );
 
     /**
@@ -81,10 +81,7 @@ interface IDAO {
      */
     event ProposalCanceled(uint256 proposalId);
 
-    event ProposalTallyingStarted(
-        uint256 proposalId,
-        bytes32 requestId
-    );
+    event ProposalTallyingStarted(uint256 proposalId, bytes32 requestId);
 
     /**
      * @notice Emitted when a valid proposal is created.
@@ -112,7 +109,10 @@ interface IDAO {
      */
     event VoteCast(uint256 proposalId, uint256 nullifierHash);
 
-    function propose(Action[] memory _actions, bytes32 _descriptionHash) external returns (uint256 proposalId);
+    function propose(
+        Action[] memory _actions,
+        bytes32 _descriptionHash
+    ) external returns (uint256 proposalId);
 
     function queue(uint256 proposalId) external;
 
@@ -120,13 +120,9 @@ interface IDAO {
 
     function cancel(uint256 proposalId) external;
 
-    function castVote(
-        uint256 proposalId,
-        VoteData calldata voteData
-    ) external;
+    function castVote(uint256 proposalId, VoteData calldata voteData) external;
 
     function tally(uint256 proposalId) external;
 
     function finalize(uint256 proposalId) external;
-
 }

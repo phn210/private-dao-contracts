@@ -262,8 +262,8 @@ contract FundManager is
         ) {
             // _insertBatch(fundingRound.listCommitment);
             for (uint256 i; i < fundingRound.listCommitment.length; i++) {
-                _insert(fundingRound.listCommitment[i]);
-                emit LeafInserted(fundingRound.listCommitment[i]);
+                uint32 index = _insert(fundingRound.listCommitment[i]);
+                emit LeafInserted(index, fundingRound.listCommitment[i]);
             }
             for (uint8 i; i < fundingRound.listDAO.length; i++) {
                 fundingRound.daoBalances[fundingRound.listDAO[i]] = request
@@ -415,7 +415,12 @@ contract FundManager is
     /*================= CHAINLINK AUTOMATION =================*/
     function checkUpkeep(
         bytes calldata checkData
-    ) view external override returns (bool upkeepNeeded, bytes memory performData) {
+    )
+        external
+        view
+        override
+        returns (bool upkeepNeeded, bytes memory performData)
+    {
         uint256 fundingRoundID = fundingRoundCounter - 1;
         bytes32 requestID = fundingRounds[fundingRoundID].requestID;
         if (

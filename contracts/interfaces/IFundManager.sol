@@ -63,8 +63,6 @@ interface IFundManager {
         uint256[] indexed result
     );
 
-    event LeafInserted(uint256 indexed commitment);
-
     event FundingRoundFinalized(uint256 indexed fundingRoundID);
 
     event FundingRoundFailed(uint256 indexed fundingRoundID);

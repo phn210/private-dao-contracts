@@ -11,6 +11,9 @@ contract DAO is IDAO, IDKGRequest, AutomationCompatibleInterface {
     uint256 internal constant Q =
         0x30644E72E131A029B85045B68181585D2833E84879B9709143E1F593F0000001;
 
+    // descriptionHash
+    bytes32 public descriptionHash;
+
     // Number
     uint256 internal constant VOTE_OPTIONS = 3;
 
@@ -40,7 +43,7 @@ contract DAO is IDAO, IDKGRequest, AutomationCompatibleInterface {
 
     mapping(uint256 => Action[]) private actions;
 
-    mapping(uint256 => bytes32) private descriptions;
+    mapping(uint256 => bytes32) public descriptions;
 
     // Record of nullifier hashes of proposals for preventing double-voting
     mapping(uint256 => mapping(uint256 => bool)) private nullifierHashes;
@@ -80,12 +83,14 @@ contract DAO is IDAO, IDKGRequest, AutomationCompatibleInterface {
         Config memory _config,
         address _fundManager,
         address _dkg,
-        uint256 _distributedKeyId
+        uint256 _distributedKeyId,
+        bytes32 _descriptionHash
     ) {
         config = _config;
         fundManager = FundManager(_fundManager);
         dkg = IDKG(_dkg);
         distributedKeyId = _distributedKeyId;
+        descriptionHash = _descriptionHash;
     }
 
     /**
@@ -100,28 +105,34 @@ contract DAO is IDAO, IDKGRequest, AutomationCompatibleInterface {
      * @param _descriptionHash IPFS hash of proposal's description
      * @return Proposal's index
      */
-    function propose(Action[] calldata _actions, bytes32 _descriptionHash) external override returns (uint256) {
-        
+    function propose(
+        Action[] calldata _actions,
+        bytes32 _descriptionHash
+    ) external override returns (uint256) {
         uint256 proposalId = hashProposal(_actions, _descriptionHash);
         proposalIds[proposalCount] = proposalId;
         Proposal storage newProposal = proposals[proposalId];
-        
+
         // Check new proposal has  not exist
         require(
             newProposal.startBlock == 0,
             "DAO::propose: proposal already existed"
         );
-        
+
         // Check vote encryption key is usable and dkg type is correct
         require(
-            dkg.getDistributedKeyState(distributedKeyId) == IDKG.DistributedKeyState.ACTIVE &&
-            dkg.getType(distributedKeyId) == IDKG.DistributedKeyType.VOTING
+            dkg.getDistributedKeyState(distributedKeyId) ==
+                IDKG.DistributedKeyState.ACTIVE &&
+                dkg.getType(distributedKeyId) == IDKG.DistributedKeyType.VOTING
         );
-        
+
         // Check vote encryption key's verifier has the correct dimenstion
         uint8 dimension = dkg.getDimension(distributedKeyId);
-        require(dimension == VOTE_OPTIONS, "DAO::propose: can not use distributed key with the wrong dimension");
-                
+        require(
+            dimension == VOTE_OPTIONS,
+            "DAO::propose: can not use distributed key with the wrong dimension"
+        );
+
         // Assign proposal's data
         uint64 startBlock = uint64(block.number + config.pendingPeriod);
 
@@ -197,7 +208,7 @@ contract DAO is IDAO, IDKGRequest, AutomationCompatibleInterface {
             voteData._R.length == dimension && voteData._M.length == dimension,
             "FundManager: invalid input length"
         );
-        
+
         IVerifier verifier = dkg.getVerifier(request.distributedKeyID);
         uint256[] memory publicInputs = new uint256[](
             verifier.getPublicInputsLength()
@@ -305,9 +316,9 @@ contract DAO is IDAO, IDKGRequest, AutomationCompatibleInterface {
         proposal.abstainVotes = abstainVotes;
 
         emit ProposalFinalized(
-            proposalId, 
-            forVotes, 
-            againstVotes, 
+            proposalId,
+            forVotes,
+            againstVotes,
             abstainVotes
         );
     }
@@ -429,10 +440,7 @@ contract DAO is IDAO, IDKGRequest, AutomationCompatibleInterface {
     function state(uint256 proposalId) public view returns (ProposalState) {
         Proposal memory proposal = proposals[proposalId];
         Request memory request = requests[getProposalRequestId((proposalId))];
-        require(
-            proposal.startBlock > 0,
-            "DAO::state: proposal not existed."
-        );
+        require(proposal.startBlock > 0, "DAO::state: proposal not existed.");
         if (proposal.canceled) {
             return ProposalState.Canceled;
         } else if (block.number <= proposal.startBlock) {
@@ -443,14 +451,14 @@ contract DAO is IDAO, IDKGRequest, AutomationCompatibleInterface {
             return ProposalState.Active;
         } else if (
             block.number <=
-            (proposal.startBlock +
-                config.votingPeriod +
-                config.tallyingPeriod)
+            (proposal.startBlock + config.votingPeriod + config.tallyingPeriod)
         ) {
             return ProposalState.Tallying;
         } else if (
-            proposal.forVotes + proposal.againstVotes + proposal.abstainVotes == 0 ||
-            request.respondedAt > (proposal.startBlock + config.votingPeriod + config.tallyingPeriod)
+            proposal.forVotes + proposal.againstVotes + proposal.abstainVotes ==
+            0 ||
+            request.respondedAt >
+            (proposal.startBlock + config.votingPeriod + config.tallyingPeriod)
         ) {
             return ProposalState.Expired;
         } else if (proposal.forVotes <= proposal.againstVotes) {
@@ -459,16 +467,16 @@ contract DAO is IDAO, IDKGRequest, AutomationCompatibleInterface {
             return ProposalState.Succeeded;
         } else if (proposal.executed) {
             return ProposalState.Executed;
-        } else if (
-            block.number >= (proposal.eta + config.queuingPeriod)
-        ) {
+        } else if (block.number >= (proposal.eta + config.queuingPeriod)) {
             return ProposalState.Expired;
         } else {
             return ProposalState.Queued;
         }
     }
 
-    function getProposalRequestId(uint256 proposalId) public view returns (bytes32 requestId) {
+    function getProposalRequestId(
+        uint256 proposalId
+    ) public view returns (bytes32 requestId) {
         requestId = getRequestID(distributedKeyId, address(this), proposalId);
     }
 
@@ -523,7 +531,7 @@ contract DAO is IDAO, IDKGRequest, AutomationCompatibleInterface {
         address _target,
         uint _value,
         string memory _signature,
-        bytes memory _data, 
+        bytes memory _data,
         uint256 _eta
     ) internal {
         require(
@@ -547,7 +555,7 @@ contract DAO is IDAO, IDKGRequest, AutomationCompatibleInterface {
         address _target,
         uint _value,
         string memory _signature,
-        bytes memory _data, 
+        bytes memory _data,
         uint256 _eta
     ) internal {
         bytes32 txHash = keccak256(
@@ -561,7 +569,7 @@ contract DAO is IDAO, IDKGRequest, AutomationCompatibleInterface {
         address _target,
         uint _value,
         string memory _signature,
-        bytes memory _data, 
+        bytes memory _data,
         uint256 _eta
     ) internal {
         bytes32 txHash = keccak256(
@@ -572,7 +580,8 @@ contract DAO is IDAO, IDKGRequest, AutomationCompatibleInterface {
             "DAO::_executeTransaction: Transaction hasn't been queued."
         );
         require(
-            block.number >= _eta && block.number <= (_eta + config.queuingPeriod),
+            block.number >= _eta &&
+                block.number <= (_eta + config.queuingPeriod),
             "DAO::_executeTransaction: Transaction can not be executed now."
         );
 
@@ -608,15 +617,20 @@ contract DAO is IDAO, IDKGRequest, AutomationCompatibleInterface {
 
     function checkUpkeep(
         bytes calldata checkData
-    ) view external override returns (bool upkeepNeeded, bytes memory performData) {
+    )
+        external
+        view
+        override
+        returns (bool upkeepNeeded, bytes memory performData)
+    {
         uint256[2] memory rangeToCheck = abi.decode(checkData, (uint256[2]));
-        
+
         if (
-            rangeToCheck[1] >= proposalCount
-            || rangeToCheck[0] > rangeToCheck[1]
-            || rangeToCheck[0] >= proposalCount
+            rangeToCheck[1] >= proposalCount ||
+            rangeToCheck[0] > rangeToCheck[1] ||
+            rangeToCheck[0] >= proposalCount
         ) revert("DAO::checkUpkeep: Invalid range!");
-        
+
         for (uint256 i = rangeToCheck[0]; i <= rangeToCheck[1]; i++) {
             if (i >= proposalCount) continue;
             uint256 proposalId = proposalIds[i];
@@ -631,7 +645,10 @@ contract DAO is IDAO, IDKGRequest, AutomationCompatibleInterface {
     }
 
     function performUpkeep(bytes calldata performData) external override {
-        (uint256 proposalId, UpkeepAction upkeepAction) = abi.decode(performData, (uint256, UpkeepAction));
+        (uint256 proposalId, UpkeepAction upkeepAction) = abi.decode(
+            performData,
+            (uint256, UpkeepAction)
+        );
 
         if (upkeepAction == UpkeepAction.Tally) {
             tally(proposalId);
@@ -644,26 +661,35 @@ contract DAO is IDAO, IDKGRequest, AutomationCompatibleInterface {
         }
     }
 
-    function _requiredUpkeep(uint256 proposalId) view internal returns (bool, UpkeepAction) {
+    function _requiredUpkeep(
+        uint256 proposalId
+    ) internal view returns (bool, UpkeepAction) {
         ProposalState proposalState = state(proposalId);
         bytes32 requestId = getProposalRequestId(proposalId);
 
         Proposal memory proposal = proposals[proposalId];
-        IDKG.TallyTrackerState trackerState = dkg.getTallyTrackerState(requestId);
+        IDKG.TallyTrackerState trackerState = dkg.getTallyTrackerState(
+            requestId
+        );
         IDKG.TallyTracker memory tracker = dkg.getTallyTracker(requestId);
 
-        if (proposalState == ProposalState.Tallying && (tracker.dao == address(0))) {
+        if (
+            proposalState == ProposalState.Tallying &&
+            (tracker.dao == address(0))
+        ) {
             return (true, UpkeepAction.Tally);
-        } else if (proposalState == ProposalState.Tallying 
-            && trackerState == IDKG.TallyTrackerState.RESULT_SUBMITTED
+        } else if (
+            proposalState == ProposalState.Tallying &&
+            trackerState == IDKG.TallyTrackerState.RESULT_SUBMITTED
         ) {
             return (true, UpkeepAction.Finalize);
         } else if (proposalState == ProposalState.Succeeded) {
             return (true, UpkeepAction.Queue);
-        } else if (proposalState == ProposalState.Queued
-            && block.number >= proposal.eta    
+        } else if (
+            proposalState == ProposalState.Queued &&
+            block.number >= proposal.eta
         ) {
             return (true, UpkeepAction.Execute);
         }
-    }    
+    }
 }
