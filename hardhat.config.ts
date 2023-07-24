@@ -32,22 +32,25 @@ const config: HardhatUserConfig = {
         hardhat: {
             allowUnlimitedContractSize: true,
             chainId: chainIds.hardhat,
-            blockGasLimit: 1000000000,
+            blockGasLimit: 10000000000,
         },
         localhost: {
-            chainId: 31337
+            chainId: 31337,
+            blockGasLimit: 10000000000,
+            allowUnlimitedContractSize: true,
+            timeout: 1000000,
         },
         goerli: {
             accounts: process.env.KEYS?.split(" "),
             chainId: chainIds.goerli,
             url: "https://rpc.ankr.com/eth_goerli",
-            gas: 1200000
+            gas: 1200000,
         },
         sepolia: {
             accounts: process.env.KEYS?.split(" "),
             chainId: chainIds.sepolia,
             url: "https://rpc2.sepolia.org",
-            gas: 5000000
+            gas: 5000000,
         },
     },
     solidity: {

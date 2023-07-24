@@ -3,7 +3,7 @@ import { deploy } from "../1-deploy-with-check";
 async function main() {
     const { _, $, t, n, config } = await deploy(false);
 
-    const keyID = 10;
+    const keyID = 0;
 
     const fundingRoundID = await _.FundManager.fundingRoundCounter();
     

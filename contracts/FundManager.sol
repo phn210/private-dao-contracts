@@ -360,6 +360,10 @@ contract FundManager is
     function getFundingRoundState(
         uint256 _fundingRoundID
     ) public view returns (FundingRoundState) {
+        require(
+            _fundingRoundID < fundingRoundCounter,
+            "FundManager: invalid fundingRoundID"
+        );
         uint64 finalizedAt = fundingRounds[_fundingRoundID].finalizedAt;
         uint64 launchedAt = fundingRounds[_fundingRoundID].launchedAt;
         bytes32 requestID = fundingRounds[_fundingRoundID].requestID;

@@ -39,4 +39,12 @@ contract Queue {
     function getLength() public view returns (uint256) {
         return last + 1 - first;
     }
+
+    function getQueue() public view returns (address[] memory result) {
+        uint256 queueLength = getLength();
+        result = new address[](queueLength);
+        for (uint256 i; i < queueLength; i++) {
+            result[i] = data[first + i];
+        }
+    }
 }

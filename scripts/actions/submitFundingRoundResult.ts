@@ -11,7 +11,7 @@ import { getFundedValue } from "../constants/funded";
 async function main() {
     const { _, $, t, n, config } = await deploy(false);
 
-    const fundingRoundID = 1;
+    const fundingRoundID = 0;
     const dim = 3;
 
     console.log(

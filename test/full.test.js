@@ -123,6 +123,10 @@ describe("Test DAO Flows", () => {
 
         await this.daoManager.setFundManager(this.fundManager.address);
         await this.daoManager.setDKG(this.dkgContract.address);
+
+        // console.log("DKG ", this.dkgContract.address);
+        // console.log("FundManager ", this.fundManager.address);
+        // console.log("DAOManager ", this.daoManager.address);
     });
 
     describe("Test DKG", async () => {
@@ -319,8 +323,8 @@ describe("Test DAO Flows", () => {
 
     describe("Test DAOManager", async () => {
         it("Success Flow", async () => {
-            await this.daoManager.setDistributedKeyId(this.votingKeyId);
-            expect(await this.daoManager.distributedKeyId()).to.be.eq(
+            await this.daoManager.setDistributedKeyID(this.votingKeyId);
+            expect(await this.daoManager.distributedKeyID()).to.be.eq(
                 this.votingKeyId
             );
 
@@ -399,12 +403,12 @@ describe("Test DAO Flows", () => {
                             value: VoterData.data1.votingPower[i],
                         }
                     );
-
+                // console.log(fund.circuitInput.commitment.toString());
                 this.tree.insert(fund.circuitInput.commitment.toString());
                 this.commitments.push(fund.circuitInput.commitment.toString());
                 this.votingNullifiers.push(fund.circuitInput.nullifier);
             }
-
+            console.log("Root:", this.tree.root);
             await mineBlocks(51);
             expect(
                 await this.fundManager.getFundingRoundState(fundingRoundID)
@@ -594,8 +598,8 @@ describe("Test DAO Flows", () => {
                 firstProposal.actions,
                 firstProposal.descriptionHash
             );
-            
-            expect(await this.firstDAO.proposalIds(0)).to.be.equal(
+
+            expect(await this.firstDAO.proposalIDs(0)).to.be.equal(
                 proposalHash
             );
 

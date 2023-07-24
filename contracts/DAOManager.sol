@@ -13,7 +13,7 @@ contract DAOManager is IDAOFactory {
     uint256 private requiredDeposit;
     address private admin;
     uint256 public daoCounter;
-    uint256 public distributedKeyId;
+    uint256 public distributedKeyID;
 
     mapping(uint256 => address) public override daos;
     mapping(address => uint256) public deposits;
@@ -44,18 +44,18 @@ contract DAOManager is IDAOFactory {
         dkg = IDKG(_dkg);
     }
 
-    function setDistributedKeyId(uint256 _distributedKeyId) external onlyAdmin {
-        distributedKeyId = _distributedKeyId;
+    function setDistributedKeyID(uint256 _distributedKeyID) external onlyAdmin {
+        distributedKeyID = _distributedKeyID;
     }
 
     function createDAO(
-        uint256 expectedId,
-        IDAO.Config calldata config,
-        bytes32 descriptionHash
-    ) external payable override returns (uint256 daoId) {
+        uint256 _expectedID,
+        IDAO.Config calldata _config,
+        bytes32 _descriptionHash
+    ) external payable override returns (uint256 daoIndex) {
         require(
-            expectedId == daoCounter,
-            "DAOManager::createDAO: update expectedId to latest value"
+            _expectedID == daoCounter,
+            "DAOManager::createDAO: update expectedID to latest value"
         );
 
         require(
@@ -70,23 +70,23 @@ contract DAOManager is IDAOFactory {
 
         address newDAO = address(
             new DAO(
-                config,
+                _config,
                 address(fundManager),
                 address(dkg),
-                distributedKeyId,
-                descriptionHash
+                distributedKeyID,
+                _descriptionHash
             )
         );
 
-        daoId = daoCounter;
-        daos[daoId] = newDAO;
+        daoIndex = daoCounter;
+        daos[daoIndex] = newDAO;
         ++daoCounter;
 
         deposits[newDAO] = msg.value;
 
         _applyForFunding(newDAO);
 
-        emit DAOCreated(daoId, newDAO, msg.sender, descriptionHash);
+        emit DAOCreated(daoIndex, newDAO, msg.sender, _descriptionHash);
     }
 
     function applyForFunding() external {

@@ -70,4 +70,5 @@ async function main() {
 
 main().then(() => {
     console.log("DONE");
+    process.exit(0);
 });

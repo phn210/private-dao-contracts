@@ -5,16 +5,15 @@ async function main() {
 
     enum KeyType {
         Funding,
-        Voting
+        Voting,
     }
-
     const keyType = KeyType.Funding;
     const dimension = 3;
-    const numKeys = 5;
+    const numKeys = 1;
 
     for (let i = 0; i < numKeys; i++) {
         let keyId = await _.DKG.distributedKeyCounter();
-        // await _.DKG.generateDistributedKey(dimension, keyType);
+        await _.DKG.generateDistributedKey(dimension, keyType);
         console.log("Generated Key ID:", keyId);
     }
 }

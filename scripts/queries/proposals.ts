@@ -13,7 +13,7 @@ async function main() {
 
     for(let i = 0; i < proposalIndexes.length; i++) {
         console.log("Proposal", proposalIndexes[i]);
-        let proposalId = await dao.proposalIds(proposalIndexes[i]);
+        let proposalId = await dao.proposalIDs(proposalIndexes[i]);
         console.log(await dao.proposals(proposalId));
         console.log("State", await dao.state(proposalId));
     }

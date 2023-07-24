@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-IDentifier: MIT
 pragma solidity ^0.8.0;
 
 import "./IDKGRequest.sol";
@@ -38,7 +38,8 @@ interface IDAO {
     }
 
     struct Proposal {
-        uint256 id; // Unique hash for looking up a proposal.
+        bytes32 requestID;
+        uint256 proposalID; // Unique hash for looking up a proposal.
         uint256 forVotes; // Current number of votes in favor of this proposal.
         uint256 againstVotes; // Current number of votes in opposition to this proposal.
         uint256 abstainVotes; // Current number of votes in abstain to this proposal.
@@ -69,7 +70,7 @@ interface IDAO {
      */
     event ProposalCreated(
         uint256 index,
-        uint256 indexed proposalId,
+        uint256 indexed proposalID,
         address proposer,
         Action[] actions,
         uint256 startBlock,
@@ -79,15 +80,15 @@ interface IDAO {
     /**
      * @notice Emitted when a proposal is canceled.
      */
-    event ProposalCanceled(uint256 proposalId);
+    event ProposalCanceled(uint256 proposalID);
 
-    event ProposalTallyingStarted(uint256 proposalId, bytes32 requestId);
+    event ProposalTallyingStarted(uint256 proposalID, bytes32 requestID);
 
     /**
      * @notice Emitted when a valid proposal is created.
      */
     event ProposalFinalized(
-        uint256 proposalId, // Unique hash for looking up a proposal.
+        uint256 proposalID, // Unique hash for looking up a proposal.
         uint256 forVotes, // Current number of votes in favor of this proposal.
         uint256 againstVotes, // Current number of votes in opposition to this proposal.
         uint256 abstainVotes // Current number of votes in abstain to this proposal.
@@ -96,33 +97,33 @@ interface IDAO {
     /**
      * @notice Emitted when a proposal is queued in the Timelock.
      */
-    event ProposalQueued(uint256 proposalId, uint256 eta);
+    event ProposalQueued(uint256 proposalID, uint256 eta);
 
     /**
      * @notice Emitted when a proposal is executed from Timelock.
      */
-    event ProposalExecuted(uint256 proposalId);
+    event ProposalExecuted(uint256 proposalID);
 
     /**
      * @dev FIXME update for ZKP
      * @notice Emitted when a vote casted.
      */
-    event VoteCast(uint256 proposalId, uint256 nullifierHash);
+    event VoteCast(uint256 proposalID, uint256 nullifierHash);
 
     function propose(
         Action[] memory _actions,
         bytes32 _descriptionHash
-    ) external returns (uint256 proposalId);
+    ) external returns (uint256 proposalID);
 
-    function queue(uint256 proposalId) external;
+    function queue(uint256 _proposalID) external;
 
-    function execute(uint256 proposalId) external payable;
+    function execute(uint256 _proposalID) external payable;
 
-    function cancel(uint256 proposalId) external;
+    function cancel(uint256 _proposalID) external;
 
-    function castVote(uint256 proposalId, VoteData calldata voteData) external;
+    function castVote(uint256 _proposalID, VoteData calldata _voteData) external;
 
-    function tally(uint256 proposalId) external;
+    function tally(uint256 _proposalID) external;
 
-    function finalize(uint256 proposalId) external;
+    function finalize(uint256 _proposalID) external;
 }

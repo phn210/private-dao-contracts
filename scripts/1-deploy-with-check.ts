@@ -12,7 +12,7 @@ export async function deploy(logging: boolean) {
         merkleTreeDepth: 20,
         fundingRoundConfig: [10, 100, 40],
         daoConfig: [10, 100, 40, 10, 10],
-        requiredDeposit: 0
+        requiredDeposit: 0,
     };
 
     let accounts = await ethers.getSigners();
@@ -33,16 +33,18 @@ export async function deploy(logging: boolean) {
     async function getContract(name: string) {
         const address = ADDRESSES[String(network.config.chainId)][name] || "";
         if (address == "") {
-            if (name == "PoseidonUnit2") return await ethers.getContractFactory(
-                genPoseidonContract.abi,
-                genPoseidonContract.createCode(2),
-                owner
-            );
-            if (name == "DAO" || name == "Mock") return await ethers.getContractAt(
-                name,
-                "0x0000000000000000000000000000000000000000",
-                owner
-            );
+            if (name == "PoseidonUnit2")
+                return await ethers.getContractFactory(
+                    genPoseidonContract.abi,
+                    genPoseidonContract.createCode(2),
+                    owner
+                );
+            if (name == "DAO" || name == "Mock")
+                return await ethers.getContractAt(
+                    name,
+                    "0x0000000000000000000000000000000000000000",
+                    owner
+                );
             return await ethers.getContractFactory(name, owner);
         } else {
             return await ethers.getContractAt(name, address, owner);
@@ -198,9 +200,12 @@ export async function deploy(logging: boolean) {
 
     // Deploy DKG contract
     let queue = await ethers.getContractAt("Queue", queueAddress);
-    if (logging) console.log('QUEUE:', queue.address);
+    if (logging) console.log("QUEUE:", queue.address);
 
-    if ((await daoManager.fundManager()).toLowerCase() != fundManager.address.toLowerCase()) {
+    if (
+        (await daoManager.fundManager()).toLowerCase() !=
+        fundManager.address.toLowerCase()
+    ) {
         await daoManager.setFundManager(fundManager.address);
         console.log("Set FundManager for DAOManager contract");
     }
@@ -227,8 +232,7 @@ export async function deploy(logging: boolean) {
         if (contract instanceof ethers.Contract) {
             if (logging) console.log(`${name} (EXISTED):`, contract.address);
             return contract;
-        }
-        else {
+        } else {
             let ct = await contract.deploy(...init);
             if (logging) console.log(`${name} (NEW):`, ct.address);
             return ct;
@@ -250,7 +254,7 @@ export async function deploy(logging: boolean) {
             QUEUE: queue,
             DKG: dkg,
             DAO: dao,
-            Mock: mock
+            Mock: mock,
         },
         $: {
             deployer: owner,
@@ -263,6 +267,6 @@ export async function deploy(logging: boolean) {
     };
 }
 
-// deploy(true).then(() => {
-//     process.exit(10);
-// });
+deploy(true).then(() => {
+    // process.exit(10);
+});

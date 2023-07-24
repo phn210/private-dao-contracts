@@ -3,6 +3,18 @@ import { ethers, network } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 export const ADDRESSES: { [key: string]: { [key: string]: string } } = {
+    // "31337": {
+    //     Round2ContributionVerifier:"",
+    //     FundingVerifierDim3: "",
+    //     VotingVerifierDim3: "",
+    //     TallyContributionVerifierDim3: "",
+    //     ResultVerifierDim3: "",
+    //     PoseidonUnit2: "",
+    //     Poseidon: "",
+    //     FundManager: "",
+    //     DAOManager: "",
+    //     DKG: ""
+    // },
     "31337": {
         Round2ContributionVerifier:"0x5FbDB2315678afecb367f032d93F642f64180aa3",
         FundingVerifierDim3: "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
@@ -35,19 +47,26 @@ export const ADDRESSES: { [key: string]: { [key: string]: string } } = {
         QUEUE: "0xCC8c42d6E4da920Ab053d1beE91064b4c80e1797"
     },
     "11155111": {
-        Round2ContributionVerifier:"0x0204133D60c28d539802b8fa8b0D4b30f6D0Ca4A",
-        FundingVerifierDim3: "0x109D82Fa17F773155668a5F34e9b40416ef5Cb45",
-        VotingVerifierDim3: "0x8E73fA58138bA142b821A3f4A54c2a70d71445BB",
-        TallyContributionVerifierDim3: "0x365b1ec961fd5DC748Bbb36fa5FF74294Ac23712",
-        ResultVerifierDim3: "0xFe712985329d5683471F0eAb21D3C0E109bBA6D5",
-        PoseidonUnit2: "0x802eC44fA784F2bac33725729AF22b07EEAddeF0",
-        Poseidon: "0x8864267084CA3B080e9087EB5C8c7F8d552099a5",
-        FundManager: "0xb4Dde6Dba767A281ef15bc4c64E8607ceC25420D",
-        DAOManager: "0x965EFc23245A626532D10A1fF95f3A899718e36c",
-        DKG: "0xcC6C0B223c3041431AE38388AA181c4a376cFd67",
-        QUEUE: "0xC5543A38D9DB32BB5d85737756B240696cCa3cCd"
+        Round2ContributionVerifier:"0x7295fbD3Ab027Dc289eA130E03Cd8E1C5440891c",
+        FundingVerifierDim3: "0x65094F42cf0e739EaDa3d47868B7162dEBc6B2CF",
+        VotingVerifierDim3: "0xD99e920665366A24A062413461f1E52a51dB61da",
+        TallyContributionVerifierDim3: "0x6933A2Bf57d447CD017870b56201107ef67f2cB3",
+        ResultVerifierDim3: "0xc5F2e90358C384187Ac9aCFD3256937B6D69Daee",
+        PoseidonUnit2: "0xEEaa5c32Bf5bf5c552cE670BE1D58A4E61EC5b9B",
+        Poseidon: "0xf02A06A12E7c7D1f06ee676634D6CbEE91F82A4e",
+        FundManager: "0x841DAaC5b3612D84F2b7514C8A2835f578CC8671",
+        DAOManager: "0x1cbdf9B3f9B26B5e54C215B7eD0Ca05858EacabB",
+        DKG: "0xa505BcaBb99a8CA75AEBDff22C4877B89e3a0B11",
+        QUEUE: "0x321B02463b6fb9ac49d908ED41fa86E71AA8cEF0"
     }
 };
+
+// Deployer: 0x1df64aeC03Dc1F00D76f22822FB3B16Fb2C4aB77
+// Committee Member 1: 0x1B63c70716e0211fC5F95AB9c3F2AFdebcd1869E
+// Committee Member 2: 0x82b5d1638B84637C30e9Dc7b19CCB196fc3cA622
+// Committee Member 3: 0x159E2b768C4b22A18462Dfad8c67c609A8009a2F
+// Committee Member 4: 0xf5117eE57C0008ddBB22202DCe6702D2D00FBb43
+// Committee Member 5: 0x1df64aeC03Dc1F00D76f22822FB3B16Fb2C4aB77
 
 export async function loadAllContracts(
     signer: SignerWithAddress,
