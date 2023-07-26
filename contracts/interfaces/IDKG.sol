@@ -109,7 +109,6 @@ interface IDKG {
         uint256 distributedKeyID;
         uint256[][] R;
         uint256[][] M;
-        TallyTrackerState state;
         TallyDataSubmission[] tallyDataSubmissions;
         uint8 tallyCounter;
         bool resultSubmitted;

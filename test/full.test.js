@@ -476,7 +476,8 @@ describe("Test DAO Flows", () => {
                         proof,
                     ]);
             }
-
+            // console.log(requestID);
+            // console.log(await this.dkgContract.tallyTrackers(requestID));
             let tallyDataSubmissions =
                 await this.dkgContract.getTallyDataSubmissions(requestID);
             tmp = await this.dkgContract.getM(requestID);
@@ -586,7 +587,7 @@ describe("Test DAO Flows", () => {
                     },
                 ],
                 descriptionHash:
-                    "0x1d395c3cb1e6c1e9d9ad3eb571322666a8f5d45c99b67684a44c3a2b1ccda8fe",
+                    "0xc4f8e201eedb88d8885d83fb8ad14e51d100286d129a6bc6badb55962195f095",
             };
 
             let proposalHash = await this.firstDAO.hashProposal(
