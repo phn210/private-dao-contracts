@@ -1,9 +1,8 @@
 import { ethers, network } from "hardhat";
-// @ts-ignore
-import * as genPoseidonContract from "circomlibjs/src/poseidon_gencontract";
+import { Poseidon as PoseidonLib, Utils } from "distributed-key-generation";
 import { ADDRESSES } from "./constants/address";
 
-export async function deploy(logging: boolean) {
+export async function deploy(alwayDeploy: boolean, logging: boolean) {
     let t = 3;
     let n = 5;
     let numOfDAOs = 3;
@@ -14,31 +13,24 @@ export async function deploy(logging: boolean) {
         daoConfig: [10, 100, 40, 10, 10],
         requiredDeposit: 0,
     };
-
     let accounts = await ethers.getSigners();
     let owner = accounts[0];
     let committeeSigners = [];
-    for (let i = 0; i < n - 1; i++) {
-        committeeSigners.push(accounts[i + 1]);
+    for (let i = 0; i < n; i++) {
+        committeeSigners.push(accounts[i]);
     }
-    committeeSigners.push(owner);
-
-    if (logging) console.log("Chain ID:", network.config.chainId);
-    if (logging) console.log("Deployer:", owner.address);
-    committeeSigners.map((committee, i) => {
-        if (logging)
-            console.log(`Committee Member ${i + 1}:`, committee.address);
-    });
 
     async function getContract(name: string) {
         const address = ADDRESSES[String(network.config.chainId)][name] || "";
-        if (address == "") {
-            if (name == "PoseidonUnit2")
+        if (address == "" || alwayDeploy) {
+            if (name == "PoseidonUnit2") {
+                let poseidonContract = PoseidonLib.getPoseidonContract();
                 return await ethers.getContractFactory(
-                    genPoseidonContract.abi,
-                    genPoseidonContract.createCode(2),
+                    poseidonContract.abi,
+                    poseidonContract.code,
                     owner
                 );
+            }
             if (name == "DAO" || name == "Mock")
                 return await ethers.getContractAt(
                     name,
@@ -51,6 +43,7 @@ export async function deploy(logging: boolean) {
         }
     }
 
+    let result: any = {};
     // Deploy ZKP Verifier contracts
     let Round2ContributionVerifier = await getContract(
         "Round2ContributionVerifier"
@@ -61,11 +54,12 @@ export async function deploy(logging: boolean) {
         init: any = []
     ) => {
         if (contract instanceof ethers.Contract) {
-            if (logging) console.log(`${name} (EXISTED):`, contract.address);
+            result[name + " (EXISTED)"] = contract.address;
             return contract;
         } else {
             let ct = await contract.deploy(...init);
-            if (logging) console.log(`${name} (NEW):`, ct.address);
+            result[name + " (NEW)"] = ct.address;
+            result[name + " (NEW)"] = ct.address;
             return ct;
         }
     })(Round2ContributionVerifier, "Round2ContributionVerifier");
@@ -73,11 +67,11 @@ export async function deploy(logging: boolean) {
     let FundingVerifier = await getContract("FundingVerifierDim3");
     let fundingVerifier = await (async (contract, name, init: any = []) => {
         if (contract instanceof ethers.Contract) {
-            if (logging) console.log(`${name} (EXISTED):`, contract.address);
+            result[name + " (EXISTED)"] = contract.address;
             return contract;
         } else {
             let ct = await contract.deploy(...init);
-            if (logging) console.log(`${name} (NEW):`, ct.address);
+            result[name + " (NEW)"] = ct.address;
             return ct;
         }
     })(FundingVerifier, "FundingVerifierDim3");
@@ -85,11 +79,11 @@ export async function deploy(logging: boolean) {
     let VotingVerifier = await getContract("VotingVerifierDim3");
     let votingVerifier = await (async (contract, name, init: any = []) => {
         if (contract instanceof ethers.Contract) {
-            if (logging) console.log(`${name} (EXISTED):`, contract.address);
+            result[name + " (EXISTED)"] = contract.address;
             return contract;
         } else {
             let ct = await contract.deploy(...init);
-            if (logging) console.log(`${name} (NEW):`, ct.address);
+            result[name + " (NEW)"] = ct.address;
             return ct;
         }
     })(VotingVerifier, "VotingVerifierDim3");
@@ -103,11 +97,11 @@ export async function deploy(logging: boolean) {
         init: any = []
     ) => {
         if (contract instanceof ethers.Contract) {
-            if (logging) console.log(`${name} (EXISTED):`, contract.address);
+            result[name + " (EXISTED)"] = contract.address;
             return contract;
         } else {
             let ct = await contract.deploy(...init);
-            if (logging) console.log(`${name} (NEW):`, ct.address);
+            result[name + " (NEW)"] = ct.address;
             return ct;
         }
     })(TallyContributionVerifier, "TallyContributionVerifierDim3");
@@ -115,11 +109,11 @@ export async function deploy(logging: boolean) {
     let ResultVerifier = await getContract("ResultVerifierDim3");
     let resultVerifier = await (async (contract, name, init: any = []) => {
         if (contract instanceof ethers.Contract) {
-            if (logging) console.log(`${name} (EXISTED):`, contract.address);
+            result[name + " (EXISTED)"] = contract.address;
             return contract;
         } else {
             let ct = await contract.deploy(...init);
-            if (logging) console.log(`${name} (NEW):`, ct.address);
+            result[name + " (NEW)"] = ct.address;
             return ct;
         }
     })(ResultVerifier, "ResultVerifierDim3");
@@ -136,11 +130,11 @@ export async function deploy(logging: boolean) {
     let PoseidonUnit2 = await getContract("PoseidonUnit2");
     let poseidonUnit2 = await (async (contract, name, init: any = []) => {
         if (contract instanceof ethers.Contract) {
-            if (logging) console.log(`${name} (EXISTED):`, contract.address);
+            result[name + " (EXISTED)"] = contract.address;
             return contract;
         } else {
             let ct = await contract.deploy(...init);
-            if (logging) console.log(`${name} (NEW):`, ct.address);
+            result[name + " (NEW)"] = ct.address;
             return ct;
         }
     })(PoseidonUnit2, "PoseidonUnit2");
@@ -148,11 +142,11 @@ export async function deploy(logging: boolean) {
     let Poseidon = await getContract("Poseidon");
     let poseidon = await (async (contract, name, init: any = []) => {
         if (contract instanceof ethers.Contract) {
-            if (logging) console.log(`${name} (EXISTED):`, contract.address);
+            result[name + " (EXISTED)"] = contract.address;
             return contract;
         } else {
             let ct = await contract.deploy(...init);
-            if (logging) console.log(`${name} (NEW):`, ct.address);
+            result[name + " (NEW)"] = ct.address;
             return ct;
         }
     })(Poseidon, "Poseidon", [poseidonUnit2.address]);
@@ -161,11 +155,11 @@ export async function deploy(logging: boolean) {
     let DAOManager = await getContract("DAOManager");
     let daoManager = await (async (contract, name, init: any = []) => {
         if (contract instanceof ethers.Contract) {
-            if (logging) console.log(`${name} (EXISTED):`, contract.address);
+            result[name + " (EXISTED)"] = contract.address;
             return contract;
         } else {
             let ct = await contract.deploy(...init);
-            if (logging) console.log(`${name} (NEW):`, ct.address);
+            result[name + " (NEW)"] = ct.address;
             return ct;
         }
     })(DAOManager, "DAOManager", [config.requiredDeposit]);
@@ -174,11 +168,11 @@ export async function deploy(logging: boolean) {
     let FundManager = await getContract("FundManager");
     let fundManager = await (async (contract, name, init: any = []) => {
         if (contract instanceof ethers.Contract) {
-            if (logging) console.log(`${name} (EXISTED):`, contract.address);
+            result[name + " (EXISTED)"] = contract.address;
             return contract;
         } else {
             let ct = await contract.deploy(...init);
-            if (logging) console.log(`${name} (NEW):`, ct.address);
+            result[name + " (NEW)"] = ct.address;
             return ct;
         }
     })(FundManager, "FundManager", [
@@ -194,35 +188,35 @@ export async function deploy(logging: boolean) {
 
     // Deploy DKG contract
     let dkg = await ethers.getContractAt("DKG", dkgAddress);
-    if (logging) console.log("DKG:", dkg.address);
+    result["DKG"] = dkg.address;
 
     let queueAddress = await fundManager.fundingRoundQueue();
 
     // Deploy DKG contract
     let queue = await ethers.getContractAt("Queue", queueAddress);
-    if (logging) console.log("QUEUE:", queue.address);
+    result["Queue"] = queue.address;
 
     if (
         (await daoManager.fundManager()).toLowerCase() !=
         fundManager.address.toLowerCase()
     ) {
         await daoManager.setFundManager(fundManager.address);
-        console.log("Set FundManager for DAOManager contract");
+        console.log("Setting FundManager for DAOManager contract . . .");
     }
 
     if ((await daoManager.dkg()).toLowerCase() != dkg.address.toLowerCase()) {
         await daoManager.setDKG(dkg.address);
-        console.log("Set DKG for DAOManager contract");
+        console.log("Setting DKG for DAOManager contract . . .");
     }
 
     let DAO = await getContract("DAO");
     let dao = await (async (contract, name, init: any = []) => {
         if (contract instanceof ethers.Contract) {
-            if (logging) console.log(`${name} (EXISTED):`, contract.address);
+            result[name + " (EXISTED)"] = contract.address;
             return contract;
         } else {
             let ct = await contract.deploy(...init);
-            if (logging) console.log(`${name} (NEW):`, ct.address);
+            result[name + " (NEW)"] = ct.address;
             return ct;
         }
     })(DAO, "DAO");
@@ -230,17 +224,19 @@ export async function deploy(logging: boolean) {
     let Mock = await getContract("Mock");
     let mock = await (async (contract, name, init: any = []) => {
         if (contract instanceof ethers.Contract) {
-            if (logging) console.log(`${name} (EXISTED):`, contract.address);
+            result[name + " (EXISTED)"] = contract.address;
             return contract;
         } else {
             let ct = await contract.deploy(...init);
-            if (logging) console.log(`${name} (NEW):`, ct.address);
+            result[name + " (NEW)"] = ct.address;
             return ct;
         }
     })(Mock, "Mock");
 
+    if (logging) {
+        Utils.logFullObject(result);
+    }
     console.log("DEPLOYING DONE!");
-
     return {
         _: {
             Round2ContributionVerifier: round2ContributionVerifier,
@@ -267,6 +263,3 @@ export async function deploy(logging: boolean) {
     };
 }
 
-deploy(true).then(() => {
-    // process.exit(10);
-});

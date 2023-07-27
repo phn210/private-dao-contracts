@@ -201,7 +201,8 @@ contract DAO is IDAO, IDKGRequest, AutomationCompatibleInterface {
 
         uint8 dimension = dkg.getDimension(request.distributedKeyID);
         require(
-            _voteData._R.length == dimension && _voteData._M.length == dimension,
+            _voteData._R.length == dimension &&
+                _voteData._M.length == dimension,
             "FundManager: invalid input length"
         );
 

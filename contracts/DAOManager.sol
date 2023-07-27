@@ -67,7 +67,11 @@ contract DAOManager is IDAOFactory {
             daos[daoCounter] == address(0),
             "DAOManager::createDAO: DAO existed"
         );
-
+        require(
+            dkg.getDistributedKeyState(distributedKeyID) ==
+                IDKG.DistributedKeyState.ACTIVE &&
+                dkg.getType(distributedKeyID) == IDKG.DistributedKeyType.VOTING
+        );
         address newDAO = address(
             new DAO(
                 _config,
