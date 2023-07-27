@@ -1,5 +1,5 @@
 const { expect } = require("chai");
-const { ethers } = require("hardhat");
+const { ethers, network } = require("hardhat");
 const genPoseidonContract = require("circomlibjs/src/poseidon_gencontract");
 const snarkjs = require("snarkjs");
 const { Committee, Voter } = require("../libs/index");
@@ -124,9 +124,9 @@ describe("Test DAO Flows", () => {
         await this.daoManager.setFundManager(this.fundManager.address);
         await this.daoManager.setDKG(this.dkgContract.address);
 
-        // console.log("DKG ", this.dkgContract.address);
-        // console.log("FundManager ", this.fundManager.address);
-        // console.log("DAOManager ", this.daoManager.address);
+        console.log("DKG ", this.dkgContract.address);
+        console.log("FundManager ", this.fundManager.address);
+        console.log("DAOManager ", this.daoManager.address);
     });
 
     describe("Test DKG", async () => {
@@ -448,6 +448,8 @@ describe("Test DAO Flows", () => {
                 }
 
                 let tallyContribution = Committee.getTallyContribution(
+                    recipientIndex,
+                    CommitteeData.data1[i].C,
                     CommitteeData.data1[i].a0,
                     CommitteeData.data1[i].secret["f(i)"],
                     u,
@@ -696,6 +698,8 @@ describe("Test DAO Flows", () => {
                 }
 
                 let tallyContribution = Committee.getTallyContribution(
+                    recipientIndex,
+                    CommitteeData.data1[i].C,
                     CommitteeData.data1[i].a0,
                     CommitteeData.data1[i].secret["f(i)"],
                     u,

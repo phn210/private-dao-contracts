@@ -288,6 +288,8 @@ namespace Committee {
     }
 
     export function getTallyContribution(
+        senderIndex: number,
+        C: Array<BigInt[]>,
         privateKey: BigInt,
         f: BigInt,
         u: Array<BigInt[]>,
@@ -313,6 +315,8 @@ namespace Committee {
         let result = {
             D: D,
             circuitInput: {
+                senderIndex: senderIndex,
+                C: C,
                 u: u,
                 c: c,
                 decryptedF: decryptedF,
