@@ -3,7 +3,7 @@ import { deploy } from "../1-deploy-with-check";
 async function main() {
     const { _, $, t, n, config } = await deploy(false);
 
-    const daoIds = [0, 1, 2];
+    const daoIds = [0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2];
 
     for (let i = 0; i < daoIds.length; i++) {
         let daoAddress = await _.DAOManager.daos(daoIds[i]);

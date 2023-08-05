@@ -9,8 +9,8 @@ import { Utils } from "../../libs/utils";
 async function main() {
     const { _, $, t, n, config } = await deploy(false);
 
-    const fundingRoundID = 0;
-    const keyID = 0;
+    const fundingRoundID = 1;
+    const keyID = 4;
     // in ETH
     const fundingAmount = '0.01';
     const fundingValue = BigInt(Number(ethers.utils.parseEther(fundingAmount)));
@@ -49,7 +49,7 @@ async function main() {
             path.join(path.resolve(), '/zk-resources/zkey/fund_dim3_final.zkey')
         );
         proof = Utils.genSolidityProof(proof.pi_a, proof.pi_b, proof.pi_c);
-        await _.FundManager.connect($.voters[i]).fund(
+        let tx = await _.FundManager.connect($.voters[i]).fund(
             fundingRoundID,
             fund.commitment,
             fund.Ri,
@@ -59,6 +59,7 @@ async function main() {
                 value: fundingValue,
             }
         );
+        await tx.wait();
 
         console.log('Investor', $.voters[i].address, 'funded!');
         console.log(Utils.logFullObject({

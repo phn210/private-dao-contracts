@@ -9,11 +9,12 @@ async function main() {
     }
     const keyType = KeyType.Funding;
     const dimension = 3;
-    const numKeys = 1;
+    const numKeys = 5;
 
     for (let i = 0; i < numKeys; i++) {
         let keyId = await _.DKG.distributedKeyCounter();
-        await _.DKG.generateDistributedKey(dimension, keyType);
+        let tx = await _.DKG.generateDistributedKey(dimension, keyType);
+        await tx.wait();
         console.log("Generated Key ID:", keyId);
     }
 }
