@@ -1,11 +1,11 @@
-import crypto from 'crypto';
+import crypto from "crypto";
 import { ethers } from "hardhat";
-import { deploy } from "../1-deploy-with-check";
+import { deploy } from "../deploy-with-check";
+
+const daoID = 0;
 
 async function main() {
-    const { _, $, t, n, config } = await deploy(false);
-
-    const daoId = 0;
+    const { _, $, t, n, config } = await deploy(false, false);
     const proposalData = {
         shortDes: "Apply for funding round proposal",
         actions: [
@@ -16,27 +16,23 @@ async function main() {
                 data: "0x",
             },
         ],
-        descriptionHash: '0x'+crypto.randomBytes(32).toString('hex')
+        descriptionHash:
+            "0xc4f8e201eedb88d8885d83fb8ad14e51d100286d129a6bc6badb55962195f095",
     };
 
-    const daoAddress = await _.DAOManager.daos(daoId);
+    const daoAddress = await _.DAOManager.daos(daoID);
     const dao = _.DAO.attach(daoAddress);
 
-    console.log(`Creating proposal for DAO ${dao.address}`);
-    const proposalId = dao.hashProposal(
+    const proposalId = await dao.hashProposal(
         proposalData.actions,
         proposalData.descriptionHash
     );
 
-    await dao.propose(
-        proposalData.actions,
-        proposalData.descriptionHash
-    );
-    
+    await dao.propose(proposalData.actions, proposalData.descriptionHash);
+
     const proposalState = await dao.state(proposalId);
-    if (proposalState == 0) console.log(`Created new proposal`);
+    if (proposalState == 0) console.log(`Created new proposal ${proposalId}`);
 }
-
 main().then(() => {
     console.log("DONE");
     process.exit();

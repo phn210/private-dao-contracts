@@ -2,43 +2,43 @@
 import * as snarkjs from "snarkjs";
 import path from "path";
 import { ethers } from "hardhat";
-import { deploy } from "../1-deploy-with-check";
-import { Voter } from "../../libs/index";
-import { Utils } from "../../libs/utils";
+import { deploy } from "../deploy-with-check";
+import { Voter, Utils } from "distributed-key-generation";
+import { VoterData } from "../../test/mock-data";
 
+const daoIndex = 0;
+const proposalIndex = 0;
+const eligibleVoterIndexes = [0, 1, 2];
 async function main() {
-    const { _, $, t, n, config } = await deploy(false);
-
-    const daoIndex = 0;
-    const proposalIndex = 0;
-    const keyID = 0;
-    // in ETH
-    const fundingAmount = '0.01';
-    const votingPower = BigInt(Number(ethers.utils.parseEther(fundingAmount)));
-    const votingVector = [
-        [0, 1, 0],
-        [1, 0, 0],
-        [0, 1, 0],
-        [0, 1, 0],
-        [0, 0, 1],
-    ];
+    const { _, $, t, n, config } = await deploy(false, false);
 
     const daoAddress = await _.DAOManager.daos(daoIndex);
-
     const dao = _.DAO.attach(daoAddress);
-    console.log("DAO:", dao.address);
+    console.log("DAO: ", dao.address);
+    console.log("Proposal index: ", proposalIndex);
+    const proposalID = await dao.proposalIDs(proposalIndex);
+    console.log("Proposal ID: ", proposalID);
+    console.log("Proposal state", await dao.state(proposalID));
+    let proposal = await dao.proposals(proposalID);
+    let requestID = proposal.requestID;
+    let request = await dao.requests(requestID);
+    let keyID = request.distributedKeyID;
 
-
-    console.log("Proposal", proposalIndex);
-    const proposalId = await dao.proposalIds(proposalIndex);
-    console.log("State", await dao.state(proposalId));
-
-    let [publicKeyX, publicKeyY] = await _.DKG.getPublicKey(
-        keyID
-    );
+    let [publicKeyX, publicKeyY] = await _.DKG.getPublicKey(keyID);
     publicKeyX = BigInt(publicKeyX);
     publicKeyY = BigInt(publicKeyY);
 
+    for (let i = 0; i < eligibleVoterIndexes.length; i++) {
+        let voterIndex = eligibleVoterIndexes[i];
+        let voter = $.voters[i];
+        let voterData = {
+            votingPower: VoterData[0].votingPower[voterIndex],
+            fundingVector: VoterData[0].fundingVector[voterIndex],
+            votingVector: VoterData[0].votingVector[voterIndex],
+            commitment: VoterData[0].commitment[voterIndex],
+            nullifier: VoterData[0].nullifier[voterIndex],
+        }
+    }
     // for (let i = 0; i < $.voters.length; i++) {
     //     let index = this.tree.indexOf(this.commitments[eligibleVoters[i]]);
     //     console.log(index);

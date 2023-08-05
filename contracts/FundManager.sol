@@ -299,7 +299,10 @@ contract FundManager is
         require(
             getFundingRoundState(_fundingRoundID) == FundingRoundState.FINALIZED
         );
-        require(fundingRound.daoBalances[_dao] > 0);
+        require(
+            fundingRound.daoBalances[_dao] > 0,
+            "FundManager: does not have fund to withdraw"
+        );
         uint256 reserveAmount = (fundingRound.daoBalances[_dao] *
             reserveFactor) / 10 ** 18;
         bounty += reserveAmount;

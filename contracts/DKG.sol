@@ -101,6 +101,7 @@ contract DKG is IDKG {
             _distributedKeyID
         ];
         (uint8 t, ) = IFundManager(owner).getDKGParams();
+        require(_distributedKeyID < distributedKeyCounter, "dkgContract: invalid distributedKeyID");
         require(
             getDistributedKeyState(_distributedKeyID) ==
                 DistributedKeyState.CONTRIBUTION_ROUND_1,
@@ -306,23 +307,28 @@ contract DKG is IDKG {
 
         n = n - 1;
         publicInputs[0] = _tallyContribution.senderIndex;
-        for(uint8 i; i < t; i++){
-            publicInputs[2*i + 1] = round1DataSubmission.x[i];
-            publicInputs[2*i + 1 + 1] = round1DataSubmission.y[i];
+        for (uint8 i; i < t; i++) {
+            publicInputs[2 * i + 1] = round1DataSubmission.x[i];
+            publicInputs[2 * i + 1 + 1] = round1DataSubmission.y[i];
         }
         for (uint8 i; i < n; i++) {
-            publicInputs[2 * i + 2 * t + 1] = round2DataSubmissions[i].ciphers[0];
-            publicInputs[2 * i + 1 + 2 * t + 1] = round2DataSubmissions[i].ciphers[1];
-            publicInputs[2 * n + i + 2 * t + 1] = round2DataSubmissions[i].ciphers[2];
+            publicInputs[2 * i + 2 * t + 1] = round2DataSubmissions[i].ciphers[
+                0
+            ];
+            publicInputs[2 * i + 1 + 2 * t + 1] = round2DataSubmissions[i]
+                .ciphers[1];
+            publicInputs[2 * n + i + 2 * t + 1] = round2DataSubmissions[i]
+                .ciphers[2];
         }
         for (uint8 i; i < dimension; i++) {
             publicInputs[3 * n + 2 * i + 2 * t + 1] = tallyTracker.R[i][0];
             publicInputs[3 * n + 2 * i + 1 + 2 * t + 1] = tallyTracker.R[i][1];
-            publicInputs[3 * n + dimension * 2 + 2 * i + 2 * t + 1] = _tallyContribution.Di[
-                i
-            ][0];
-            publicInputs[3 * n + dimension * 2 + 2 * i + 1 + 2 * t + 1] = _tallyContribution
-                .Di[i][1];
+            publicInputs[
+                3 * n + dimension * 2 + 2 * i + 2 * t + 1
+            ] = _tallyContribution.Di[i][0];
+            publicInputs[
+                3 * n + dimension * 2 + 2 * i + 1 + 2 * t + 1
+            ] = _tallyContribution.Di[i][1];
         }
 
         // Verify proof

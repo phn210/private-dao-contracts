@@ -2,54 +2,47 @@
 import * as snarkjs from "snarkjs";
 import path from "path";
 import { ethers } from "hardhat";
-import { deploy } from "../1-deploy-with-check";
-import { CommitteeData } from "../../test/data";
-import { Committee } from "../../libs/index";
-import { Utils } from "../../libs/utils";
+import { deploy } from "../deploy-with-check";
+import { CommitteeData } from "../../test/mock-data";
+import { Committee, Utils } from "distributed-key-generation";
 
+const fundingRoundID = 0;
+const committeeIndexes = [1, 2, 3];
 async function main() {
-    const { _, $, t, n, config } = await deploy(false);
-
-    const committeeIndexes = [1, 2, 3];
-    const fundingRoundID = 0;
-    const keyID = 0;
+    const { _, $, t, n, config } = await deploy(false, false);
+    // await _.FundManager.startTallying(fundingRoundID);
+    // console.log("Funding round is tallying");
 
     console.log(
         `Funding Round ${fundingRoundID} State:`,
         await _.FundManager.getFundingRoundState(fundingRoundID)
     );
+    let fundingRound = await _.FundManager.fundingRounds(fundingRoundID);
+    console.log(fundingRound);
+    let requestID = fundingRound.requestID;
+    let keyID = await _.FundManager.getDistributedKeyID(requestID);
+    console.log(`This funding round use distributed key ${keyID}`);
 
-    // await _.FundManager.startTallying(fundingRoundID);
-    // console.log('Funding round is tallying');
+    console.log(
+        "TallyTracker state:",
+        await _.DKG.getTallyTrackerState(requestID)
+    );
+
+    let tmp = await _.DKG.getR(requestID);
+    let R = [];
+    for (let i = 0; i < tmp.length; i++) {
+        R.push([BigInt(tmp[i][0]), BigInt(tmp[i][1])]);
+    }
 
     for (let i = 0; i < committeeIndexes.length; i++) {
         let committeeIndex = committeeIndexes[i];
         let committee = $.committee[committeeIndex - 1];
-
-        let committeeData;
-        committeeData = CommitteeData.data1[committeeIndex - 1];
-
-        let fundingRound = await _.FundManager.fundingRounds(fundingRoundID);
-        console.log(fundingRound);
-        let requestID = fundingRound.requestID;
-        console.log(requestID);
-        console.log(
-            "TallyTracker state:",
-            await _.DKG.getTallyTrackerState(requestID)
-        );
-
-        let tmp = await _.DKG.getR(requestID);
-        console.log(tmp);
-        let R = [];
-        for (let i = 0; i < tmp.length; i++) {
-            R.push([BigInt(tmp[i][0]), BigInt(tmp[i][1])]);
-        }
+        let committeeData = CommitteeData[0][committeeIndex - 1];
 
         let round2DataSubmissions = await _.DKG.getRound2DataSubmissions(
             keyID,
             committeeIndex
         );
-
         let senderIndexes = [];
         let u = [];
         let c = [];
@@ -61,14 +54,16 @@ async function main() {
             ]);
             c.push(BigInt(round2DataSubmissions[i].ciphers[2]));
         }
+
         let tallyContribution = Committee.getTallyContribution(
+            committeeIndex,
+            committeeData.C,
             committeeData.a0,
-            committeeData.secret["f(i)"],
+            (committeeData.f as any)[committeeIndex.toString()],
             u,
             c,
             R
         );
-        console.log(Utils.logFullObject(tallyContribution.circuitInput));
         let { proof, publicSignals } = await snarkjs.groth16.fullProve(
             tallyContribution.circuitInput,
             path.join(
@@ -86,8 +81,14 @@ async function main() {
             tallyContribution.D,
             proof,
         ]);
-        console.log(`Committee member ${i} contributed to tally process`);
+        console.log(
+            `Committee member ${committeeIndex} submitted tally contribution`
+        );
     }
+    console.log(
+        "TallyTracker state:",
+        await _.DKG.getTallyTrackerState(requestID)
+    );
 }
 
 main().then(() => {
