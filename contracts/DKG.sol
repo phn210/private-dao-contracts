@@ -101,7 +101,10 @@ contract DKG is IDKG {
             _distributedKeyID
         ];
         (uint8 t, ) = IFundManager(owner).getDKGParams();
-        require(_distributedKeyID < distributedKeyCounter, "dkgContract: invalid distributedKeyID");
+        require(
+            _distributedKeyID < distributedKeyCounter,
+            "dkgContract: invalid distributedKeyID"
+        );
         require(
             getDistributedKeyState(_distributedKeyID) ==
                 DistributedKeyState.CONTRIBUTION_ROUND_1,
@@ -367,9 +370,14 @@ contract DKG is IDKG {
         );
         TallyDataSubmission[] memory tallyDataSubmissions = tallyTracker
             .tallyDataSubmissions;
+        uint8[] memory listIndex = new uint8[](t);
+        for (uint8 i; i < t; i++) {
+            listIndex[i] = tallyDataSubmissions[i].senderIndex;
+        }
+        uint256[] memory lagrangeCoefficients = Math.computeLagrangeCoefficient(listIndex);
         uint256[][] memory M = tallyTracker.M;
         for (uint8 i; i < t; i++) {
-            publicInputs[i] = tallyDataSubmissions[i].senderIndex;
+            publicInputs[i] = lagrangeCoefficients[i];
             for (uint8 j; j < dimension; j++) {
                 publicInputs[
                     t + i * dimension * 2 + 2 * j

@@ -7,11 +7,11 @@ import { CommitteeData } from "../../test/mock-data";
 import { Committee, Utils } from "distributed-key-generation";
 
 const fundingRoundID = 0;
-const committeeIndexes = [1, 2, 3];
+const committeeIndexes = [1, 2, 4];
 async function main() {
     const { _, $, t, n, config } = await deploy(false, false);
-    // await _.FundManager.startTallying(fundingRoundID);
-    // console.log("Funding round is tallying");
+    await _.FundManager.startTallying(fundingRoundID);
+    console.log("Funding round is tallying");
 
     console.log(
         `Funding Round ${fundingRoundID} State:`,

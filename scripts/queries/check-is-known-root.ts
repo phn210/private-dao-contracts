@@ -1,7 +1,7 @@
 import { deploy } from "../deploy-with-check";
 
 const root =
-    10399602789488381211849145976571388105747490234315561341892992155201232816845n;
+    18839682444875989663287299599924359730671459830010219777153572616452823568398n;
 async function main() {
     const { _, $, t, n, config } = await deploy(false, false);
     let result = await _.FundManager.isKnownRoot(root);

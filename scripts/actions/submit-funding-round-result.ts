@@ -5,8 +5,15 @@ import { ethers } from "hardhat";
 import { deploy } from "../deploy-with-check";
 import { Committee, Utils } from "distributed-key-generation";
 import { VoterData } from "../../test/mock-data";
+import axios from "axios";
+import bigInt from "big-integer";
 
+const minimalUnit = bigInt(
+    Number(process.env.MINIMAL_UNIT || 10000000000000000n)
+);
+const applicationServerURL = process.env.APPLICATION_SERVER_URL;
 const fundingRoundID = 0;
+
 async function main() {
     const { _, $, t, n, config } = await deploy(false, false);
 
@@ -45,6 +52,7 @@ async function main() {
         M.push([BigInt(tmp[i][0]), BigInt(tmp[i][1])]);
     }
     let resultVector = Committee.getResultVector(listIndex, D, M);
+
     // Should brute force resultVector to get result
     let result = [...Array(dim).keys()].map((index: any) => 0n);
     for (let i = 0; i < $.voters.length; i++) {
@@ -59,10 +67,36 @@ async function main() {
                 voterData.votingPower * BigInt(voterData.fundingVector[j]);
         }
     }
-    console.log(`Result ${result} will be submitted`);
 
+    // (BigInt.prototype as any).toJSON = function () {
+    //     return this.toString();
+    // };
+    // let bruteForcesRequest = await axios.post(
+    //     applicationServerURL + "/committee/brute-forces",
+    //     {
+    //         resultVector: resultVector,
+    //     }
+    // );
+
+    // let result = bruteForcesRequest.data.data.result;
+    // for (let i = 0; i < result.length; i++) {
+    //     result[i] = Utils.getBigInt(bigInt(result[i]).multiply(minimalUnit));
+    // }
+
+    console.log(`Result ${result} will be submitted`);
+    console.log(
+        Utils.stringifyCircuitInput({
+            listIndex: listIndex,
+            D: D,
+            M: M,
+            result: result,
+        })
+    );
+    let lagrangeCoefficient = Utils.getBigIntArray(
+        Committee.getLagrangeCoefficient(listIndex)
+    );
     let { proof, publicSignals } = await snarkjs.groth16.fullProve(
-        { listIndex: listIndex, D: D, M: M, result: result },
+        { lagrangeCoefficient: lagrangeCoefficient, D: D, M: M, result: result },
         path.join(
             path.resolve(),
             "/zk-resources/wasm/result-verifier_dim3.wasm"

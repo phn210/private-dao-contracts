@@ -11,12 +11,7 @@ import "./libs/Math.sol";
 import "./libs/MerkleTree.sol";
 import "./DKG.sol";
 
-contract FundManager is
-    IFundManager,
-    IDKGRequest,
-    MerkleTree,
-    AutomationCompatibleInterface
-{
+contract FundManager is IFundManager, IDKGRequest, MerkleTree {
     address public founder;
     uint8 public numberOfCommittees;
     uint8 public threshold;
@@ -423,40 +418,5 @@ contract FundManager is
         bytes32 _requestID
     ) external view override returns (uint256[] memory) {
         return requests[_requestID].result;
-    }
-
-    /*================= CHAINLINK AUTOMATION =================*/
-    function checkUpkeep(
-        bytes calldata checkData
-    )
-        external
-        view
-        override
-        returns (bool upkeepNeeded, bytes memory performData)
-    {
-        uint256 fundingRoundID = fundingRoundCounter - 1;
-        bytes32 requestID = fundingRounds[fundingRoundID].requestID;
-        if (
-            getFundingRoundState(fundingRoundID) ==
-            FundingRoundState.TALLYING &&
-            dkgContract.getTallyTracker(requestID).dao == address(0)
-        ) {
-            upkeepNeeded = true;
-            performData = bytes.concat(bytes32(fundingRoundID));
-        }
-    }
-
-    function performUpkeep(bytes calldata performData) external override {
-        uint256 fundingRoundID = fundingRoundCounter - 1;
-        bytes32 requestID = fundingRounds[fundingRoundID].requestID;
-        if (
-            getFundingRoundState(fundingRoundID) ==
-            FundingRoundState.TALLYING &&
-            dkgContract.getTallyTracker(requestID).dao == address(0)
-        ) {
-            uint256[1] memory data = abi.decode(performData, (uint256[1]));
-            require(data[0] == fundingRoundID);
-            startTallying(data[0]);
-        }
     }
 }

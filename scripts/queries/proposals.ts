@@ -1,7 +1,7 @@
-import { deploy } from "../1-deploy-with-check";
+import { deploy } from "../deploy-with-check";
 
 async function main() {
-    const { _, $, t, n, config } = await deploy(false);
+    const { _, $, t, n, config } = await deploy(false, false);
 
     const daoIndexes = 0;
     const proposalIndexes = [0, 1, 2, 3];

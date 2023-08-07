@@ -10,18 +10,17 @@ library Math {
         0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
 
     function computeLagrangeCoefficient(
-        uint8[] memory _listIndex,
-        uint8 _threshold
+        uint8[] memory _listIndex
     ) internal pure returns (uint256[] memory) {
         // require(_listIndex.length == threshold, "DKG contract: invalid input");
-        uint256[] memory lagrangeCoefficient = new uint256[](_threshold);
-        for (uint8 indexI; indexI < _threshold; indexI++) {
+        uint256[] memory lagrangeCoefficient = new uint256[](_listIndex.length);
+        for (uint8 indexI; indexI < _listIndex.length; indexI++) {
             // uint8 i = _listIndex[indexI];
             uint8 i = _listIndex[indexI];
             uint256 numerator = 1;
             uint256 denominator = 1;
             uint8 negativeCounter = 0;
-            for (uint8 indexJ; indexJ < _threshold; indexJ++) {
+            for (uint8 indexJ; indexJ < _listIndex.length; indexJ++) {
                 uint8 j = _listIndex[indexJ];
                 if (i != j) {
                     numerator = numerator * j;

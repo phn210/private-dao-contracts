@@ -61,6 +61,7 @@ async function main() {
             amount: voterData.votingPower.toString(),
             fundingVector: voterData.fundingVector,
             commitment: fund.commitment,
+            nullifier: fund.circuitInput.nullifier,
         });
     }
 }

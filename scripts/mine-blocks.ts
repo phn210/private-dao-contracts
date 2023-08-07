@@ -14,7 +14,7 @@ async function mineBlocks(nums: number) {
 }
 
 async function main() {
-    await mineBlocks(60);
+    await mineBlocks(85);
 }
 
 main().then(() => {

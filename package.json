@@ -25,6 +25,7 @@
         "@openzeppelin/contracts": "^4.8.3",
         "@openzeppelin/hardhat-upgrades": "^1.22.1",
         "@tenderly/hardhat-tenderly": "^1.7.0",
+        "axios": "^1.4.0",
         "circomlibjs": "git+https://github.com/tornadocash/circomlib.git#74cef72af30c43ab7789ba25e00031231760866c",
         "distributed-key-generation": "file:packages/distributed-key-generation-v1.0.0.tgz",
         "dotenv": "^16.0.3",

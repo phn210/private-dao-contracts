@@ -504,6 +504,9 @@ describe("Test DAO Flows", () => {
             }
 
             let resultVector = Committee.getResultVector(listIndex, D, M);
+            let lagrangeCoefficient = Utils.getBigIntArray(
+                Committee.getLagrangeCoefficient(listIndex)
+            );
             // console.log(resultVector);
 
             // Should brute-force resultVector to get result
@@ -518,7 +521,12 @@ describe("Test DAO Flows", () => {
             }
             // console.log(result);
             let { proof, publicSignals } = await snarkjs.groth16.fullProve(
-                { listIndex: listIndex, D: D, M: M, result: result },
+                {
+                    lagrangeCoefficient: lagrangeCoefficient,
+                    D: D,
+                    M: M,
+                    result: result,
+                },
                 __dirname + "/../zk-resources/wasm/result-verifier_dim3.wasm",
                 __dirname +
                     "/../zk-resources/zkey/result-verifier_dim3_final.zkey"
@@ -753,6 +761,9 @@ describe("Test DAO Flows", () => {
             }
 
             let resultVector = Committee.getResultVector(listIndex, D, M);
+            let lagrangeCoefficient = Utils.getBigIntArray(
+                Committee.getLagrangeCoefficient(listIndex)
+            );
             // console.log(resultVector);
 
             // Should brute-force resultVector to get result
@@ -768,7 +779,12 @@ describe("Test DAO Flows", () => {
             }
             // console.log(result);
             let { proof, publicSignals } = await snarkjs.groth16.fullProve(
-                { listIndex: listIndex, D: D, M: M, result: result },
+                {
+                    lagrangeCoefficient: lagrangeCoefficient,
+                    D: D,
+                    M: M,
+                    result: result,
+                },
                 __dirname + "/../zk-resources/wasm/result-verifier_dim3.wasm",
                 __dirname +
                     "/../zk-resources/zkey/result-verifier_dim3_final.zkey"

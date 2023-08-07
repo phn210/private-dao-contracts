@@ -1,8 +1,8 @@
 
-import { deploy } from "../1-deploy-with-check";
+import { deploy } from "../deploy-with-check";
 
 async function main() {
-    const { _, $, t, n, config } = await deploy(false);
+    const { _, $, t, n, config } = await deploy(false, false);
 
     //const numDAOs = await _.DAOMananger.daoCounter();
     const numDAOs = 3;

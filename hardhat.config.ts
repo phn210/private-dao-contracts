@@ -8,14 +8,13 @@ import "dotenv/config";
 var accounts;
 const mnemonic: string | undefined = process.env.MNEMONIC;
 
-const keys: any | undefined = process.env.KEYS?.split(" ")
-.map((key) => ({
-        privateKey: key,
-        balance: "10000000000000000000000",
+const keys: any | undefined = process.env.KEYS?.split(" ").map((key) => ({
+    privateKey: key,
+    balance: "10000000000000000000000",
 }));
 
-if (process.env.MNEMONIC) accounts = { mnemonic };
-else if (process.env.KEYS) accounts = keys;
+// if (process.env.MNEMONIC) accounts = { mnemonic };
+// else if (process.env.KEYS) accounts = keys;
 
 const chainIds = {
     hardhat: 31337,
@@ -36,11 +35,16 @@ const config: HardhatUserConfig = {
             accounts: accounts,
         },
         localhost: {
-            accounts: process.env.KEYS?.split(" "),
+            // accounts: process.env.KEYS?.split(" "),
             chainId: 31337,
             blockGasLimit: 10000000000,
             allowUnlimitedContractSize: true,
             timeout: 1000000,
+        },
+        zkvn: {
+            accounts: process.env.KEYS?.split(" "),
+            chainId: 31337,
+            url: "https://thepao-node.auxo.fund",
         },
         goerli: {
             accounts: process.env.KEYS?.split(" "),

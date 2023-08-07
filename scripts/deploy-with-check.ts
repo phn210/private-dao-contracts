@@ -247,7 +247,7 @@ export async function deploy(alwayDeploy: boolean, logging: boolean) {
             Poseidon: poseidon,
             FundManager: fundManager,
             DAOManager: daoManager,
-            QUEUE: queue,
+            Queue: queue,
             DKG: dkg,
             DAO: dao,
             Mock: mock,
