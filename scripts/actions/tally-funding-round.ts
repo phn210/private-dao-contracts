@@ -10,8 +10,8 @@ const fundingRoundID = 0;
 const committeeIndexes = [1, 2, 3];
 async function main() {
     const { _, $, t, n, config } = await deploy(false, false);
-    // await _.FundManager.startTallying(fundingRoundID);
-    // console.log("Funding round is tallying");
+    await _.FundManager.startTallying(fundingRoundID);
+    console.log("Funding round is tallying");
 
     console.log(
         `Funding Round ${fundingRoundID} State:`,
@@ -76,11 +76,12 @@ async function main() {
             )
         );
         proof = Utils.genSolidityProof(proof.pi_a, proof.pi_b, proof.pi_c);
-        await _.DKG.connect(committee).submitTallyContribution(requestID, [
+        let tx = await _.DKG.connect(committee).submitTallyContribution(requestID, [
             committeeIndex,
             tallyContribution.D,
             proof,
         ]);
+        await tx.wait();
         console.log(
             `Committee member ${committeeIndex} submitted tally contribution`
         );

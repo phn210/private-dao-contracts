@@ -30,7 +30,8 @@ async function main() {
             x.push(committeeData.C[i][0]);
             y.push(committeeData.C[i][1]);
         }
-        await _.DKG.connect(committee).submitRound1Contribution(keyID, [x, y]);
+        let tx = await _.DKG.connect(committee).submitRound1Contribution(keyID, [x, y]);
+        await tx.wait();
         console.log(
             `Committee ${committeeIndex} submitted round 1 contribution`
         );

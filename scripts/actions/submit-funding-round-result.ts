@@ -10,6 +10,8 @@ const fundingRoundID = 0;
 async function main() {
     const { _, $, t, n, config } = await deploy(false, false);
 
+    const result = [ 10000000000000000n * 4n, 10000000000000000n * 2n, 0n];
+
     console.log(
         `Funding Round ${fundingRoundID} State:`,
         await _.FundManager.getFundingRoundState(fundingRoundID)
@@ -46,19 +48,20 @@ async function main() {
     }
     let resultVector = Committee.getResultVector(listIndex, D, M);
     // Should brute force resultVector to get result
-    let result = [...Array(dim).keys()].map((index: any) => 0n);
-    for (let i = 0; i < $.voters.length; i++) {
-        let voterData = {
-            votingPower: VoterData[0].votingPower[i],
-            fundingVector: VoterData[0].fundingVector[i],
-            votingVector: VoterData[0].votingVector[i],
-        };
+    
+    // let result = [...Array(dim).keys()].map((index: any) => 0n);
+    // for (let i = 0; i < $.voters.length; i++) {
+    //     let voterData = {
+    //         votingPower: VoterData[0].votingPower[i],
+    //         fundingVector: VoterData[0].fundingVector[i],
+    //         votingVector: VoterData[0].votingVector[i],
+    //     };
 
-        for (let j = 0; j < dim; j++) {
-            result[j] +=
-                voterData.votingPower * BigInt(voterData.fundingVector[j]);
-        }
-    }
+    //     for (let j = 0; j < dim; j++) {
+    //         result[j] +=
+    //             voterData.votingPower * BigInt(voterData.fundingVector[j]);
+    //     }
+    // }
     console.log(`Result ${result} will be submitted`);
 
     let { proof, publicSignals } = await snarkjs.groth16.fullProve(
@@ -73,7 +76,8 @@ async function main() {
         )
     );
     proof = Utils.genSolidityProof(proof.pi_a, proof.pi_b, proof.pi_c);
-    await _.DKG.submitTallyResult(requestID, result, proof);
+    let tx = await _.DKG.submitTallyResult(requestID, result, proof);
+    await tx.wait();
     console.log("Funding round result is submitted");
 
     console.log(

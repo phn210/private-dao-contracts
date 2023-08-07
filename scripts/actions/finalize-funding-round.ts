@@ -12,7 +12,8 @@ async function main() {
         await _.FundManager.getFundingRoundState(fundingRoundID)
     );
 
-    await _.FundManager.finalizeFundingRound(fundingRoundID);
+    let tx = await _.FundManager.finalizeFundingRound(fundingRoundID);
+    await tx.wait();
     console.log(`Funding round ${fundingRoundID} is finalized`);
 
     if (Number(await _.FundManager.getFundingRoundState(fundingRoundID)) == 4) {

@@ -8,7 +8,7 @@ async function main() {
     }
     let keyType = KeyType.Funding;
     const dimension = 3;
-    const numKeys = 1;
+    const numKeys = 5;
     for (let i = 0; i < numKeys; i++) {
         let keyID = await _.DKG.distributedKeyCounter();
         let tx = await _.DKG.generateDistributedKey(dimension, keyType);
