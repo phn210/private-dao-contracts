@@ -58,12 +58,13 @@ async function main() {
 
         proof = Utils.genSolidityProof(proof.pi_a, proof.pi_b, proof.pi_c);
 
-        await _.DKG.connect(committee).submitRound2Contribution(keyID, [
+        let tx = await _.DKG.connect(committee).submitRound2Contribution(keyID, [
             committeeIndex,
             recipientIndexes,
             ciphers,
             proof,
         ]);
+        await tx.wait();
         console.log(
             `Committee ${committeeIndex} submitted round 2 contribution`
         );

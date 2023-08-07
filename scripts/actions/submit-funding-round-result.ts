@@ -17,6 +17,8 @@ const fundingRoundID = 0;
 async function main() {
     const { _, $, t, n, config } = await deploy(false, false);
 
+    const result = [ 10000000000000000n * 4n, 10000000000000000n * 2n, 0n];
+
     console.log(
         `Funding Round ${fundingRoundID} State:`,
         await _.FundManager.getFundingRoundState(fundingRoundID)
@@ -107,7 +109,8 @@ async function main() {
         )
     );
     proof = Utils.genSolidityProof(proof.pi_a, proof.pi_b, proof.pi_c);
-    await _.DKG.submitTallyResult(requestID, result, proof);
+    let tx = await _.DKG.submitTallyResult(requestID, result, proof);
+    await tx.wait();
     console.log("Funding round result is submitted");
 
     console.log(
