@@ -17,8 +17,6 @@ const fundingRoundID = 0;
 async function main() {
     const { _, $, t, n, config } = await deploy(false, false);
 
-    const result = [ 10000000000000000n * 4n, 10000000000000000n * 2n, 0n];
-
     console.log(
         `Funding Round ${fundingRoundID} State:`,
         await _.FundManager.getFundingRoundState(fundingRoundID)
