@@ -10,7 +10,7 @@ import axios from "axios";
 const applicationServerURL = process.env.APPLICATION_SERVER_URL;
 const daoIndex = 0;
 const proposalIndex = 0;
-const eligibleVoterIndexes = [0, 1, 2];
+const eligibleVoterIndexes = [0, 1];
 async function main() {
     let investmentPathRequest = await axios.post(
         applicationServerURL + "/investment/paths"
@@ -25,7 +25,7 @@ async function main() {
     console.log("Proposal index: ", proposalIndex);
     const proposalID = await dao.proposalIDs(proposalIndex);
     console.log("Proposal ID: ", proposalID);
-    console.log("Proposal state", await dao.state(proposalID));
+    console.log("Proposal state: ", await dao.state(proposalID));
     let proposal = await dao.proposals(proposalID);
     let requestID = proposal.requestID;
     let request = await dao.requests(requestID);
@@ -47,7 +47,7 @@ async function main() {
     }
     for (let i = 0; i < eligibleVoterIndexes.length; i++) {
         let voterIndex = eligibleVoterIndexes[i];
-        let path = merkleTreePath[voterData[voterIndex].commitment.toString()];
+        let treePath = merkleTreePath[voterData[voterIndex].commitment.toString()];
 
         let vote = Voter.getVote(
             Utils.getBigIntArray([publicKeyX, publicKeyY]),
@@ -56,25 +56,25 @@ async function main() {
             voterData[voterIndex].votingVector,
             voterData[voterIndex].votingPower,
             voterData[voterIndex].nullifier,
-            path.pathElements,
-            path.pathIndices,
-            path.pathRoot
+            treePath.pathElements,
+            treePath.pathIndices,
+            treePath.pathRoot
         );
         // console.log(vote);
         let { proof, publicSignals } = await snarkjs.groth16.fullProve(
             vote.circuitInput,
-            __dirname + "/../zk-resources/wasm/vote_dim3.wasm",
-            __dirname + "/../zk-resources/zkey/vote_dim3_final.zkey"
+            path.join(path.resolve(), "/zk-resources/wasm/vote_dim3.wasm"),
+            path.join(path.resolve(), "/zk-resources/zkey/vote_dim3_final.zkey")
         );
         proof = Utils.genSolidityProof(proof.pi_a, proof.pi_b, proof.pi_c);
         let voteData = [
-            path.pathRoot,
+            treePath.pathRoot,
             vote.circuitInput.nullifierHash,
             vote.Ri,
             vote.Mi,
             proof,
         ];
-        console.log(publicSignals);
+        // console.log(publicSignals);
         await dao.castVote(proposalID, voteData);
     }
 }

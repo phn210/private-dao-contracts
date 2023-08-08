@@ -7,7 +7,7 @@ import "./libs/Math.sol";
 import "./libs/MerkleTree.sol";
 import "./FundManager.sol";
 
-contract DAO is IDAO, IDKGRequest, AutomationCompatibleInterface {
+contract DAO is IDAO, IDKGRequest {
     uint256 internal constant Q =
         0x30644E72E131A029B85045B68181585D2833E84879B9709143E1F593F0000001;
 
@@ -605,88 +605,4 @@ contract DAO is IDAO, IDKGRequest, AutomationCompatibleInterface {
     }
 
     receive() external payable {}
-
-    /**
-     * ================================
-     * ===== CHAINLINK AUTOMATION =====
-     * ================================
-     */
-
-    function checkUpkeep(
-        bytes calldata checkData
-    )
-        external
-        view
-        override
-        returns (bool upkeepNeeded, bytes memory performData)
-    {
-        uint256[2] memory rangeToCheck = abi.decode(checkData, (uint256[2]));
-
-        if (
-            rangeToCheck[1] >= proposalCounter ||
-            rangeToCheck[0] > rangeToCheck[1] ||
-            rangeToCheck[0] >= proposalCounter
-        ) revert("DAO::checkUpkeep: Invalid range!");
-
-        for (uint256 i = rangeToCheck[0]; i <= rangeToCheck[1]; i++) {
-            if (i >= proposalCounter) continue;
-            uint256 proposalID = proposalIDs[i];
-            UpkeepAction upkeepAction;
-            (upkeepNeeded, upkeepAction) = _requiredUpkeep(proposalID);
-
-            if (upkeepNeeded) {
-                performData = abi.encodePacked(proposalID, upkeepAction);
-                return (upkeepNeeded, performData);
-            }
-        }
-    }
-
-    function performUpkeep(bytes calldata performData) external override {
-        (uint256 _proposalID, UpkeepAction upkeepAction) = abi.decode(
-            performData,
-            (uint256, UpkeepAction)
-        );
-
-        if (upkeepAction == UpkeepAction.Tally) {
-            tally(_proposalID);
-        } else if (upkeepAction == UpkeepAction.Finalize) {
-            finalize(_proposalID);
-        } else if (upkeepAction == UpkeepAction.Queue) {
-            queue(_proposalID);
-        } else if (upkeepAction == UpkeepAction.Execute) {
-            execute(_proposalID);
-        }
-    }
-
-    function _requiredUpkeep(
-        uint256 _proposalID
-    ) internal view returns (bool, UpkeepAction) {
-        ProposalState proposalState = state(_proposalID);
-        Proposal memory proposal = proposals[_proposalID];
-        bytes32 requestID = proposal.requestID;
-
-        IDKG.TallyTrackerState trackerState = dkg.getTallyTrackerState(
-            requestID
-        );
-        IDKG.TallyTracker memory tracker = dkg.getTallyTracker(requestID);
-
-        if (
-            proposalState == ProposalState.Tallying &&
-            (tracker.dao == address(0))
-        ) {
-            return (true, UpkeepAction.Tally);
-        } else if (
-            proposalState == ProposalState.Tallying &&
-            trackerState == IDKG.TallyTrackerState.RESULT_SUBMITTED
-        ) {
-            return (true, UpkeepAction.Finalize);
-        } else if (proposalState == ProposalState.Succeeded) {
-            return (true, UpkeepAction.Queue);
-        } else if (
-            proposalState == ProposalState.Queued &&
-            block.number >= proposal.eta
-        ) {
-            return (true, UpkeepAction.Execute);
-        }
-    }
 }

@@ -15,21 +15,23 @@ async function main() {
     let tx = await _.FundManager.finalizeFundingRound(fundingRoundID);
     await tx.wait();
     console.log(`Funding round ${fundingRoundID} is finalized`);
+    let state = await _.FundManager.getFundingRoundState(fundingRoundID);
+    console.log(`Funding round ${fundingRoundID} state: ${state}`);
 
-    if (Number(await _.FundManager.getFundingRoundState(fundingRoundID)) == 4) {
-        console.log(`Because funding round ${fundingRoundID} is succeeded, DAOs can withdraw fund.`);
-        const totalFunded = await _.FundManager.getFundingRoundBalance(
-            fundingRoundID
-        );
-        console.log(`${totalFunded} will be distributed to DAOs`);
-        console.log("Withdrawing fund for DAOs in the funding round . . . ");
-        const listDAO = await _.FundManager.getListDAO(fundingRoundID);
-        for (let i = 1; i < listDAO.length; i++) {
-            console.log(`DAO ${listDAO[i]} was funded`);
-            await _.FundManager.withdrawFund(fundingRoundID, listDAO[i]);
-            console.log(`DAO ${listDAO[i]} withdrew fund!`);
-        }
-    }
+    // if (Number(await _.FundManager.getFundingRoundState(fundingRoundID)) == 4) {
+    //     console.log(`Because funding round ${fundingRoundID} is succeeded, DAOs can withdraw fund.`);
+    //     const totalFunded = await _.FundManager.getFundingRoundBalance(
+    //         fundingRoundID
+    //     );
+    //     console.log(`${totalFunded} will be distributed to DAOs`);
+    //     console.log("Withdrawing fund for DAOs in the funding round . . . ");
+    //     const listDAO = await _.FundManager.getListDAO(fundingRoundID);
+    //     for (let i = 1; i < listDAO.length; i++) {
+    //         console.log(`DAO ${listDAO[i]} was funded`);
+    //         await _.FundManager.withdrawFund(fundingRoundID, listDAO[i]);
+    //         console.log(`DAO ${listDAO[i]} withdrew fund!`);
+    //     }
+    // }
 }
 
 main().then(() => {

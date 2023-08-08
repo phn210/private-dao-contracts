@@ -3,29 +3,33 @@ import * as snarkjs from "snarkjs";
 import path from "path";
 import { ethers } from "hardhat";
 import { deploy } from "../deploy-with-check";
+import { CommitteeData } from "../../test/mock-data";
 import { Committee, Utils } from "distributed-key-generation";
-import { VoterData } from "../../test/mock-data";
-import axios from "axios";
 import bigInt from "big-integer";
+import axios from "axios";
 
 const minimalUnit = bigInt(
     Number(process.env.MINIMAL_UNIT || 10000000000000000n)
 );
 const applicationServerURL = process.env.APPLICATION_SERVER_URL;
-const fundingRoundID = 0;
-
+const committeeIndexes = [1, 2, 4];
+const daoIndex = 0;
+const proposalIndex = 0;
 async function main() {
     const { _, $, t, n, config } = await deploy(false, false);
+    const daoAddress = await _.DAOManager.daos(daoIndex);
+    const dao = _.DAO.attach(daoAddress);
+    console.log("DAO: ", dao.address);
+    console.log("Proposal index: ", proposalIndex);
+    const proposalID = await dao.proposalIDs(proposalIndex);
+    console.log("Proposal ID: ", proposalID);
+    console.log("Proposal state: ", await dao.state(proposalID));
+    let proposal = await dao.proposals(proposalID);
+    let requestID = proposal.requestID;
+    let request = await dao.requests(requestID);
+    let keyID = request.distributedKeyID;
 
-    console.log(
-        `Funding Round ${fundingRoundID} State:`,
-        await _.FundManager.getFundingRoundState(fundingRoundID)
-    );
-    let fundingRound = await _.FundManager.fundingRounds(fundingRoundID);
-    console.log(fundingRound);
-    let requestID = fundingRound.requestID;
-    let keyID = await _.FundManager.getDistributedKeyID(requestID);
-    console.log(`This funding round use distributed key ${keyID}`);
+    console.log(`This proposal use distributed key ${keyID}`);
     console.log(
         "TallyTracker state:",
         await _.DKG.getTallyTrackerState(requestID)
@@ -88,7 +92,12 @@ async function main() {
         Committee.getLagrangeCoefficient(listIndex)
     );
     let { proof, publicSignals } = await snarkjs.groth16.fullProve(
-        { lagrangeCoefficient: lagrangeCoefficient, D: D, M: M, result: result },
+        {
+            lagrangeCoefficient: lagrangeCoefficient,
+            D: D,
+            M: M,
+            result: result,
+        },
         path.join(
             path.resolve(),
             "/zk-resources/wasm/result-verifier_dim3.wasm"
@@ -101,16 +110,13 @@ async function main() {
     proof = Utils.genSolidityProof(proof.pi_a, proof.pi_b, proof.pi_c);
     let tx = await _.DKG.submitTallyResult(requestID, result, proof);
     await tx.wait();
-    console.log("Funding round result is submitted");
+    console.log("Proposal result is submitted");
 
     console.log(
         "TallyTracker state:",
         await _.DKG.getTallyTrackerState(requestID)
     );
-    console.log(
-        `Funding Round ${fundingRoundID} State:`,
-        await _.FundManager.getFundingRoundState(fundingRoundID)
-    );
+    console.log("Proposal state: ", await dao.state(proposalID));
 }
 
 main().then(() => {
