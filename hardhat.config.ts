@@ -13,8 +13,8 @@ const keys: any | undefined = process.env.KEYS?.split(" ").map((key) => ({
     balance: "10000000000000000000000",
 }));
 
-if (process.env.MNEMONIC) accounts = { mnemonic };
-else if (process.env.KEYS) accounts = keys;
+// if (process.env.MNEMONIC) accounts = { mnemonic };
+// else if (process.env.KEYS) accounts = keys;
 
 const chainIds = {
     hardhat: 31337,

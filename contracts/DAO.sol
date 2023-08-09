@@ -140,7 +140,9 @@ contract DAO is IDAO, IDKGRequest {
         newProposal.proposer = msg.sender;
         newProposal.startBlock = startBlock;
 
-        actions[proposalID] = _actions;
+        for (uint i; i < _actions.length; i++) {
+            actions[proposalID].push(_actions[i]);
+        }
         descriptions[proposalID] = _descriptionHash;
 
         bytes32 requestID = getRequestID(
