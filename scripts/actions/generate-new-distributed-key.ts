@@ -6,7 +6,7 @@ enum KeyType {
 }
 const dimension = 3;
 const numKeys = 1;
-const keyType = KeyType.Funding;
+const keyType = KeyType.Voting;
 
 async function main() {
     const { _, $, t, n, config } = await deploy(false, false);

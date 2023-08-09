@@ -174,6 +174,10 @@ contract DKG is IDKG {
                 .sender == msg.sender,
             "dkgContract: invalid sender"
         );
+        require(
+            !distributedKey.round2Submitteds[_round2Contribution.senderIndex],
+            "dkgContract: You are not allow to submit multiple times"
+        );
 
         bytes32 bitChecker;
         bytes32 bitMask;
@@ -251,6 +255,7 @@ contract DKG is IDKG {
         }
 
         distributedKey.round2Counter += 1;
+        distributedKey.round2Submitteds[_round2Contribution.senderIndex] = true;
         emit Round2DataSubmitted(msg.sender);
         if (distributedKey.round2Counter == n) {
             emit DistributedKeyActivated(_distributedKeyID);

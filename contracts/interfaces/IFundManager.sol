@@ -111,7 +111,7 @@ interface IFundManager {
 
     /*==================== VIEW FUNCTION ====================*/
 
-    function getFundingRoundQueueLength() external view returns (uint256);
+    // function getFundingRoundQueueLength() external view returns (uint256);
 
     function isCommittee(address _sender) external view returns (bool);
 
@@ -123,7 +123,7 @@ interface IFundManager {
         uint256 _fundingRoundID
     ) external view returns (address[] memory);
 
-    function getFundingRoundBalance(
-        uint256 _fundingRoundID
-    ) external view returns (uint256);
+    // function getFundingRoundBalance(
+    //     uint256 _fundingRoundID
+    // ) external view returns (uint256);
 }

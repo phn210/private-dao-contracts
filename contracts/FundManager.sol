@@ -310,14 +310,14 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
 
     /*==================== VIEW FUNCTION ====================*/
 
-    function getFundingRoundQueueLength()
-        external
-        view
-        override
-        returns (uint256)
-    {
-        return fundingRoundQueue.getLength();
-    }
+    // function getFundingRoundQueueLength()
+    //     external
+    //     view
+    //     override
+    //     returns (uint256)
+    // {
+    //     return fundingRoundQueue.getLength();
+    // }
 
     // FIXME use a funding round counter instead of timestamp for determinism
     function getRequestID(
@@ -343,11 +343,11 @@ contract FundManager is IFundManager, IDKGRequest, MerkleTree {
         return fundingRounds[_fundingRoundID].listDAO;
     }
 
-    function getFundingRoundBalance(
-        uint256 _fundingRoundID
-    ) external view override returns (uint256) {
-        return fundingRounds[_fundingRoundID].balance;
-    }
+    // function getFundingRoundBalance(
+    //     uint256 _fundingRoundID
+    // ) external view override returns (uint256) {
+    //     return fundingRounds[_fundingRoundID].balance;
+    // }
 
     function getDistributedKeyID(
         bytes32 _requestID
