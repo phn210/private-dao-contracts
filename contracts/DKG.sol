@@ -101,10 +101,7 @@ contract DKG is IDKG {
             _distributedKeyID
         ];
         (uint8 t, ) = IFundManager(owner).getDKGParams();
-        require(
-            !distributedKey.round1Submitteds[msg.sender],
-            "dkgContract: You are not allow to submit multiple times"
-        );
+        require(!distributedKey.round1Submitteds[msg.sender]);
         require(
             _distributedKeyID < distributedKeyCounter,
             "dkgContract: invalid distributedKeyID"
@@ -175,8 +172,7 @@ contract DKG is IDKG {
             "dkgContract: invalid sender"
         );
         require(
-            !distributedKey.round2Submitteds[_round2Contribution.senderIndex],
-            "dkgContract: You are not allow to submit multiple times"
+            !distributedKey.round2Submitteds[_round2Contribution.senderIndex]
         );
 
         bytes32 bitChecker;
@@ -308,6 +304,13 @@ contract DKG is IDKG {
                 _tallyContribution.senderIndex <= n
         );
         require(_tallyContribution.Di.length == dimension);
+
+        for (uint8 i; i < tallyTracker.tallyDataSubmissions.length; i++) {
+            require(
+                tallyTracker.tallyDataSubmissions[i].senderIndex !=
+                    _tallyContribution.senderIndex
+            );
+        }
 
         Round1DataSubmission memory round1DataSubmission = distributedKey
             .round1DataSubmissions[_tallyContribution.senderIndex - 1];
