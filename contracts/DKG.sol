@@ -102,6 +102,10 @@ contract DKG is IDKG {
         ];
         (uint8 t, ) = IFundManager(owner).getDKGParams();
         require(
+            !distributedKey.round1Submitteds[msg.sender],
+            "dkgContract: You are not allow to submit multiple times"
+        );
+        require(
             _distributedKeyID < distributedKeyCounter,
             "dkgContract: invalid distributedKeyID"
         );
@@ -141,7 +145,7 @@ contract DKG is IDKG {
                 _round1Contribution.x[0],
                 _round1Contribution.y[0]
             );
-
+        distributedKey.round1Submitteds[msg.sender] = true;
         emit Round1DataSubmitted(msg.sender);
         return distributedKey.round1Counter;
     }

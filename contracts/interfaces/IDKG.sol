@@ -64,6 +64,7 @@ interface IDKG {
         uint256 publicKeyX;
         uint256 publicKeyY;
         Round1DataSubmission[] round1DataSubmissions;
+        mapping (address => bool) round1Submitteds;
         mapping(uint8 => Round2DataSubmission[]) round2DataSubmissions;
         uint256 usageCounter;
     }
