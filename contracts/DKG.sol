@@ -290,6 +290,7 @@ contract DKG is IDKG {
         (uint8 t, uint8 n) = IFundManager(owner).getDKGParams();
         uint8 dimension = distributedKey.dimension;
 
+        require(tallyTracker.dao != address(0));
         require(
             getTallyTrackerState(_requestID) == TallyTrackerState.CONTRIBUTION
         );
@@ -374,7 +375,9 @@ contract DKG is IDKG {
         for (uint8 i; i < t; i++) {
             listIndex[i] = tallyDataSubmissions[i].senderIndex;
         }
-        uint256[] memory lagrangeCoefficients = Math.computeLagrangeCoefficient(listIndex);
+        uint256[] memory lagrangeCoefficients = Math.computeLagrangeCoefficient(
+            listIndex
+        );
         uint256[][] memory M = tallyTracker.M;
         for (uint8 i; i < t; i++) {
             publicInputs[i] = lagrangeCoefficients[i];
